@@ -1,13 +1,10 @@
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
-const cors = require("cors");
 const movieRoutes = require("./routes/movie");
 
 const app = express();
-app.use(express.json());
-
-app.use(cors());
+app.use(express.static('dist'))
 
 // Connect to Atlas CineVibes DB
 mongoose.connect(process.env.MONGODB_URI)
