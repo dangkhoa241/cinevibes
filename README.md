@@ -54,7 +54,7 @@ Testing:
 - Playwright / Cypress
 
 External API:
-- Movie API (e.g., TMDB)
+- Movie API (OMDB)
 
 ---
 
