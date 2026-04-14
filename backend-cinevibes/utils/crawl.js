@@ -14,13 +14,18 @@ const crawlAndStoreDetails = async (imdbID) => {
         const { data } = await axios.get(`http://www.omdbapi.com/?i=${imdbID}&plot=full&apikey=${API_KEY}`);
 
         if (data.Response === "True") {
-            // STRICT VALIDATION
-            const hasPoster = data.Poster && data.Poster.startsWith("http") && data.Poster !== "N/A";
-            const hasMinInfo = data.Actors !== "N/A" && data.Director !== "N/A" && data.imdbRating !== "N/A";
-
-            if (!hasPoster || !hasMinInfo) {
-                console.log(`Skipping ${data.Title}: Incomplete data or missing poster.`);
+            // 1. Basic string validation
+            if (!data.Poster || data.Poster === "N/A" || !data.Poster.startsWith("http")) {
                 return;
+            }
+
+            // 2. LIVENESS CHECK: Ping the image URL directly
+            try {
+                // A HEAD request only fetches headers, not the whole image, so it's fast
+                await axios.head(data.Poster);
+            } catch (imageError) {
+                console.log(`Dead Link Skipped: ${data.Title}`);
+                return; // Stop execution, do not save this movie
             }
 
             const rating = parseFloat(data.imdbRating) || 0;
