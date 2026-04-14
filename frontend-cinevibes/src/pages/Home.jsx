@@ -10,7 +10,7 @@ const Home = () => {
 
     useEffect(() => {
         // Replace with your actual backend URL
-        axios.get('http://localhost:5000/api/movies/trending')
+        axios.get('http://localhost:8000/api/movies/trending')
             .then(response => {
                 setMovies(response.data);
                 setLoading(false);

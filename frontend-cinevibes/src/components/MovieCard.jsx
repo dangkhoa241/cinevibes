@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import {useNavigate} from "react-router-dom";
 
 const MovieCard = ({ movie }) => {
     const [imgError, setImgError] = useState(false);
@@ -9,8 +10,13 @@ const MovieCard = ({ movie }) => {
         ? fallbackImage
         : movie.poster;
 
+    const navigate = useNavigate();
+    const handleClick = () => {
+        navigate(`/movie/${movie.imdbID}`);
+    }
+
     return (
-        <div className="movie-card">
+        <div className="movie-card" onClick={handleClick} style={{cursor: "pointer"}}>
             <img
                 src={currentSrc}
                 alt={movie.title}
