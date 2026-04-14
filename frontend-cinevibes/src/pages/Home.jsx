@@ -4,13 +4,14 @@ import MovieCard from '../components/MovieCard';
 import Header from "../components/Header.jsx";
 import Footer from "../components/Footer.jsx";
 
+const baseUrl = '/api/movies/trending';
+
 const Home = () => {
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Replace with your actual backend URL
-        axios.get('http://localhost:8000/api/movies/trending')
+        axios.get(baseUrl)
             .then(response => {
                 setMovies(response.data);
                 setLoading(false);
