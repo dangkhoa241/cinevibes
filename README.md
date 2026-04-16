@@ -1,6 +1,7 @@
 # 🎬 CineVibes
 
 CineVibes is a full-stack web application designed for movie enthusiasts to explore, discuss, and share opinions about movies in a structured and spoiler-aware environment.
+Try it out here: https://cinevibes-outt.onrender.com/
 
 ---
 
