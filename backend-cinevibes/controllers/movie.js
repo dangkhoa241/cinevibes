@@ -44,12 +44,12 @@ exports.addComment = async (req, res) => {
 exports.getComments = async (req, res) => {
     try {
         const { id } = req.params;
-        const { category } = req.query; // Get 'normal' or 'technical' from URL
+        const { category } = req.query;
 
         const comments = await Comment.find({
             movieId: id,
             category: category
-        }).sort({ createdAt: -1 }); // Newest first
+        }).sort({ createdAt: 1 });
 
         res.json(comments);
     } catch (err) {
