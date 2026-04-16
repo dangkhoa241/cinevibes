@@ -24,7 +24,7 @@ const crawlAndStoreDetails = async (imdbID) => {
                 // A HEAD request only fetches headers, not the whole image, so it's fast
                 await axios.head(data.Poster);
             } catch (imageError) {
-                console.log(`Dead Link Skipped: ${data.Title}`);
+                console.log(`git Dead Link Skipped: ${data.Title}`);
                 return; // Stop execution, do not save this movie
             }
 
