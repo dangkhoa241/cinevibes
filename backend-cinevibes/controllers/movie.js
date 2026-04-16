@@ -1,4 +1,5 @@
 const Movie = require("../models/movie");
+const Comment = require("../models/Comment");
 
 // GET /api/movies/trending - For Rankings
 exports.getTrending = async (req, res) => {
@@ -18,6 +19,23 @@ exports.getMovieDetail = async (req, res) => {
         const movie = await Movie.findOne({ imdbID: req.params.id });
         if (!movie) return res.status(404).json({ message: "Movie not found" });
         res.json(movie);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.addComment = async (req, res) => {
+    try {
+        const { movieId, content, category } = req.body;
+
+        const newComment = new Comment({
+            movieId,
+            content,
+            category
+        });
+
+        const savedComment = await newComment.save();
+        res.status(201).json(savedComment);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
