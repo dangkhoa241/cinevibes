@@ -1,5 +1,5 @@
 const Movie = require("../models/movie");
-const Comment = require("../models/Comment");
+const Comment = require("../models/comment");
 
 // GET /api/movies/trending - For Rankings
 exports.getTrending = async (req, res) => {
