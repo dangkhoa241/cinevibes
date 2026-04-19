@@ -3,29 +3,36 @@ import axios from 'axios';
 import MovieCard from '../components/MovieCard';
 import Header from "../components/Header.jsx";
 import Footer from "../components/Footer.jsx";
+import Pagination from "../components/Pagination.jsx";
 
-const baseUrl = '/api/movies/trending';
+
 
 const Home = () => {
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [ totalPages, setTotalPages] = useState(0);
+    const baseUrl = `/api/movies/trending?page=${page}`;
+
 
     useEffect(() => {
         axios.get(baseUrl)
             .then(response => {
-                setMovies(response.data);
+                window .scrollTo(0, 0);
+                setMovies(response.data.movies);
+                setTotalPages(Math.ceil(response.data.totalMovies / response.data.limit));
                 setLoading(false);
             })
             .catch(error => {
                 console.error("Error fetching movies:", error);
                 setLoading(false);
             });
-    }, []);
+    }, [page]);
 
     if (loading) return <div>Loading trending movies...</div>;
 
     return (
-        <>
+        <div>
             <Header></Header>
             <div style={styles.container}>
                 <h1>CineVibes</h1>
@@ -34,9 +41,10 @@ const Home = () => {
                         <MovieCard key={movie.imdbID} movie={movie} />
                     ))}
                 </div>
+                <Pagination page={page} setPage={setPage} totalPages={totalPages}></Pagination>
             </div>
             <Footer></Footer>
-        </>
+        </div>
     );
 };
 
