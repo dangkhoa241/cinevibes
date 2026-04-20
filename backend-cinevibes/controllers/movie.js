@@ -10,7 +10,7 @@ exports.getTrending = async (req, res) => {
         const totalMovies = await Movie.countDocuments();
 
         const trending = await Movie.find()
-            .sort({ discussionCount: -1 }) // Based on user comments [cite: 31]
+            .sort({ discussionCount: -1, _id:1 }) // Based on user comments [cite: 31]
             .skip(skip)
             .limit(limit);
 
@@ -63,3 +63,14 @@ exports.getComments = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+exports.searchMovie = async (req, res) => {
+    try{
+        const {title} = req.query;
+        const movies = await Movie.find({ title: { $regex: title, $options: 'i' } });
+        res.json(movies);
+    }
+    catch(err){
+        res.status(500).json({ error: err.message });
+    }
+}

@@ -127,7 +127,7 @@ const MovieDetail = () => {
 };
 
 const styles = {
-    container: { maxWidth: '1000px', margin: '0 auto', padding: '20px', backgroundColor: '#fff', color: '#333' },
+    container: { maxWidth: '100%', margin: '0 auto', padding: '20px', backgroundColor: '#fff', color: '#333' },
     hero: { display: 'flex', gap: '30px', marginBottom: '40px' },
     poster: { width: '300px', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' },
     tabBar: { display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '2px solid #eee' },
