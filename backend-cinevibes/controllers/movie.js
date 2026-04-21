@@ -29,3 +29,14 @@ exports.getMovieDetail = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+exports.searchMovie = async (req, res) => {
+    try{
+        const {title} = req.query;
+        const movies = await Movie.find({ title: { $regex: title, $options: 'i' } });
+        res.json(movies);
+    }
+    catch(err){
+        res.status(500).json({ error: err.message });
+    }
+}

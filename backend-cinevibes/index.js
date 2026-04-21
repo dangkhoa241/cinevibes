@@ -18,7 +18,7 @@ mongoose.connect(process.env.MONGODB_URI)
 
 app.use("/api/movies", movieRoutes);
 
-app.use('/movie', (req, res, next) => {
+app.use("/movie", (req, res, next) => {
     if (req.method === 'GET' && req.accepts('html')) {
         return res.sendFile(path.join(__dirname, './dist/index.html'));
     }
