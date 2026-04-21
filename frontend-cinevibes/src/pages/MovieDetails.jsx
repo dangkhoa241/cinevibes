@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 
 const baseUrl = '/api/movies';
 
-const MovieDetail = ({user}) => {
+const MovieDetail = ({ user }) => {
     const { id } = useParams();
     const [movie, setMovie] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -69,25 +69,29 @@ const MovieDetail = ({user}) => {
         }
     };
 
-    if (loading) return <div>Loading a movie...</div>;
+    if (loading) return <div style={styles.loading}>Loading movie details...</div>;
 
     return (
         <div style={styles.container}>
             <div style={styles.hero}>
-                <img src={movie.poster} alt={movie.title} style={styles.poster} />
-                <div style={styles.details}>
-                    <h1>{movie.title}</h1>
-                    <p><strong>Director:</strong> {movie.director}</p>
-                    <p><strong>Actors:</strong> {movie.actors}</p>
-                    <p>⭐ {movie.rating}</p>
-                    <p>{movie.plot}</p>
+                <div style={styles.imageWrapper}>
+                    <img src={movie.poster} alt={movie.title} style={styles.poster} />
+                </div>
+                <div style={styles.infoWrapper}>
+                    <h1 style={styles.title}>{movie.title}</h1>
+                    <div style={styles.metaData}>
+                        <p><strong>Director:</strong> {movie.director}</p>
+                        <p><strong>Actors:</strong> {movie.actors}</p>
+                        <p style={styles.rating}>⭐ {movie.rating}</p>
+                    </div>
+                    <p style={styles.plot}>{movie.plot}</p>
                 </div>
             </div>
 
-            <hr />
+            <hr style={styles.divider} />
 
             <div style={styles.commentSection}>
-                <h2>Discussions</h2>
+                <h2 style={styles.sectionTitle}>Discussions</h2>
                 <div style={styles.tabBar}>
                     <button
                         style={activeTab === 'normal' ? styles.activeTab : styles.tab}
@@ -114,9 +118,10 @@ const MovieDetail = ({user}) => {
                             </div>
                         ))
                     ) : (
-                        <p>No {activeTab} comments yet. Be the first!</p>
+                        <p style={styles.emptyText}>No {activeTab} comments yet. Be the first!</p>
                     )}
                 </div>
+
                 {user ? (
                     <form onSubmit={handleCommentSubmit} style={styles.form}>
                         <textarea
@@ -130,7 +135,7 @@ const MovieDetail = ({user}) => {
                     </form>
                 ) : (
                     <div style={styles.loginPrompt}>
-                        <p>Please <Link to="/login" style={{color: '#e50914', fontWeight: 'bold'}}>Login</Link> to join the discussion.</p>
+                        <p>Please <Link to="/login" style={styles.loginLink}>Login</Link> to join the discussion.</p>
                     </div>
                 )}
             </div>
@@ -139,25 +144,104 @@ const MovieDetail = ({user}) => {
 };
 
 const styles = {
-    container: { maxWidth: '100%', margin: '0 auto', padding: '20px', backgroundColor: '#fff', color: '#333' },
-    hero: { display: 'flex', gap: '30px', marginBottom: '40px' },
-    poster: { width: '300px', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' },
-    tabBar: { display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '2px solid #eee' },
-    tab: { padding: '10px 20px', cursor: 'pointer', border: 'none', background: 'none', fontSize: '16px' },
-    activeTab: { padding: '10px 20px', cursor: 'pointer', border: 'none', borderBottom: '3px solid #0056D2', background: 'none', fontWeight: 'bold', color: '#0056D2' },
-    textarea: { width: '100%', height: '80px', borderRadius: '8px', padding: '10px', marginBottom: '10px', border: '1px solid #ddd', fontSize: '16px' },
-    submitBtn: { padding: '10px 20px', backgroundColor: '#0056D2', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' },
-    commentCard: { padding: '15px', borderBottom: '1px solid #eee', marginBottom: '10px' },
-    commentText: { margin: '0 0 5px 0', fontSize: '16px' },
-    commentDate: { color: '#888', fontSize: '12px' },
-    loginPrompt: {
+    container: {
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '40px 20px',
+        backgroundColor: '#fff',
+        color: '#333',
+        minHeight: '100vh'
+    },
+    loading: { textAlign: 'center', padding: '50px', fontSize: '20px' },
+    hero: {
+        display: 'flex',
+        gap: '40px',
+        marginBottom: '40px',
+        alignItems: 'flex-start',
+        flexWrap: 'wrap' // Allows wrapping on small mobile screens
+    },
+    imageWrapper: {
+        flexShrink: 0,
+        boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+        borderRadius: '12px',
+        overflow: 'hidden'
+    },
+    poster: {
+        width: '300px',
+        display: 'block'
+    },
+    infoWrapper: {
+        flex: 1,
+        minWidth: '300px' // Ensures text doesn't get too thin
+    },
+    title: {
+        fontSize: '2.8rem',
+        margin: '0 0 20px 0',
+        lineHeight: '1.1',
+        fontWeight: '800',
+        color: '#1a1a1a',
+        wordBreak: 'break-word',
+        overflowWrap: 'break-word'
+    },
+    metaData: { fontSize: '1.1rem', marginBottom: '20px', color: '#444' },
+    rating: { fontSize: '1.3rem', fontWeight: 'bold', color: '#f1c40f', margin: '15px 0' },
+    plot: { lineHeight: '1.8', fontSize: '1.1rem', color: '#555', textAlign: 'justify' },
+    divider: { border: '0', borderTop: '1px solid #eee', margin: '50px 0' },
+    commentSection: { maxWidth: '800px' },
+    sectionTitle: { marginBottom: '25px', fontSize: '24px' },
+    tabBar: { display: 'flex', gap: '20px', marginBottom: '30px', borderBottom: '1px solid #eee' },
+    tab: { padding: '12px 5px', cursor: 'pointer', border: 'none', background: 'none', fontSize: '16px', color: '#888' },
+    activeTab: {
+        padding: '12px 5px',
+        cursor: 'pointer',
+        border: 'none',
+        borderBottom: '3px solid #e50914',
+        background: 'none',
+        fontWeight: 'bold',
+        color: '#e50914'
+    },
+    commentList: { marginBottom: '30px' },
+    commentCard: {
         padding: '20px',
-        textAlign: 'center',
         backgroundColor: '#f9f9f9',
         borderRadius: '8px',
-        border: '1px dashed #ccc',
+        marginBottom: '15px',
+        border: '1px solid #f0f0f0'
+    },
+    commentText: { margin: '0 0 10px 0', fontSize: '16px', lineHeight: '1.5' },
+    commentDate: { color: '#aaa', fontSize: '12px' },
+    emptyText: { color: '#999', fontStyle: 'italic' },
+    form: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end' },
+    textarea: {
+        width: '100%',
+        height: '100px',
+        borderRadius: '8px',
+        padding: '15px',
+        marginBottom: '15px',
+        border: '1px solid #ddd',
+        fontSize: '16px',
+        fontFamily: 'inherit',
+        boxSizing: 'border-box'
+    },
+    submitBtn: {
+        padding: '12px 25px',
+        backgroundColor: '#e50914',
+        color: 'white',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+        transition: 'background 0.2s'
+    },
+    loginPrompt: {
+        padding: '30px',
+        textAlign: 'center',
+        backgroundColor: '#fcfcfc',
+        borderRadius: '12px',
+        border: '1px dashed #ddd',
         marginTop: '20px'
-    }
+    },
+    loginLink: { color: '#e50914', fontWeight: 'bold', textDecoration: 'none' }
 };
 
 export default MovieDetail;
