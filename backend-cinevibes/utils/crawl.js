@@ -9,7 +9,7 @@ const searchListAndGetIDs = async (keyword, year) => {
     return data.Response === "True" ? data.Search.map(m => m.imdbID) : [];
 };
 
-const crawlAndStoreDetails = async (imdbID) => {
+const crawlAndStoreDetails = async (imdbID, forceSave = false) => {
     try {
         const { data } = await axios.get(`http://www.omdbapi.com/?i=${imdbID}&plot=full&apikey=${API_KEY}`);
 
@@ -32,7 +32,7 @@ const crawlAndStoreDetails = async (imdbID) => {
             const year = parseInt(data.Year) || 0;
 
             // Only Recent (2020+) OR Top Rated (8.0+)
-            if (year >= 2020 || rating >= 8.0) {
+            if (year >= 1990 || rating >= 7.0 || forceSave) {
                 await Movie.updateOne(
                     { imdbID: data.imdbID },
                     {
