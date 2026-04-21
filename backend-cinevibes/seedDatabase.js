@@ -7,16 +7,12 @@ const { searchListAndGetIDs, crawlAndStoreDetails } = require("./utils/crawl");
 //const targetYears = ["2023", "2024", "2025"];
 
 const keywords = [
-    "Marvel", "Avengers", "DC Comics", "Batman", "Spider-Man", // Superhero
-    "Interstellar", "Inception", "Time", "Multiverse",        // High-concept Sci-Fi
-    "Prison", "Justice", "Detective", "Heist"                 // Deep Drama/Thriller
+    "Avatar", "Pandora", "Alien World", "Exoplanet",
+    "Jungle", "Rebellion", "Colonization", "Sci-Fi Epic"
 ];
 
-// Expanded years to include the "Golden Era" of these hits (90s - Present)
-const targetYears = [
-    "1994", "2008", "2010", "2014", // Years Shawshank, Dark Knight, Inception, Interstellar released
-    "2021", "2022", "2023", "2024", "2025"
-];
+const targetYears = ["2009", "2022", "2023", "2024", "2025"];
+
 const top100IDs = [
     "tt0111161", "tt0068646", "tt0468569", "tt0071562", "tt0050083",
     "tt0108052", "tt0167260", "tt0110912", "tt0060196", "tt0120737",
