@@ -28,7 +28,7 @@ exports.getMovieDetail = async (req, res) => {
     }
 };
 
-exports.searchMovies = async (req, res) => {
+exports.searchMovie = async (req, res) => {
     try {
         const { title, page = 1, limit = 10 } = req.query;
         const skip = (page - 1) * limit;
