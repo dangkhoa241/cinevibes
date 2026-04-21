@@ -1,6 +1,5 @@
 const Movie = require("../models/movie");
 
-// GET /api/movies/trending - For Rankings
 exports.getTrending = async (req, res) => {
     try {
         const page= parseInt(req.query.page) || 1;
@@ -19,7 +18,6 @@ exports.getTrending = async (req, res) => {
     }
 };
 
-// GET /api/movies/:id - For Movie Detail Page
 exports.getMovieDetail = async (req, res) => {
     try {
         const movie = await Movie.findOne({ imdbID: req.params.id });
@@ -30,13 +28,28 @@ exports.getMovieDetail = async (req, res) => {
     }
 };
 
-exports.searchMovie = async (req, res) => {
-    try{
-        const {title} = req.query;
-        const movies = await Movie.find({ title: { $regex: title, $options: 'i' } });
-        res.json(movies);
-    }
-    catch(err){
+exports.searchMovies = async (req, res) => {
+    try {
+        const { title, page = 1, limit = 10 } = req.query;
+        const skip = (page - 1) * limit;
+
+        const movies = await Movie.find({
+            title: { $regex: title, $options: 'i' }
+        })
+            .limit(Number(limit))
+            .skip(Number(skip));
+
+        const totalMovies = await Movie.countDocuments({
+            title: { $regex: title, $options: 'i' }
+        });
+
+        res.json({
+            movies,
+            totalMovies,
+            page: Number(page),
+            limit: Number(limit)
+        });
+    } catch (err) {
         res.status(500).json({ error: err.message });
     }
-}
+};
