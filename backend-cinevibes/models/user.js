@@ -12,10 +12,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    shows: [
+    comment: [
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Show'
+            ref: 'Comment'
         }
     ]
 })

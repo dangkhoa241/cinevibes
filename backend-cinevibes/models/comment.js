@@ -8,7 +8,10 @@ const commentSchema = new mongoose.Schema({
         enum: ['normal', 'technical'],
         default: 'normal'
     },
-    user: { type: String, default: 'Anonymous' }
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }
 }, {
     timestamps: true
 });
