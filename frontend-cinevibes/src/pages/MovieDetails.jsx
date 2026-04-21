@@ -1,10 +1,11 @@
 import { useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 const baseUrl = '/api/movies';
 
-const MovieDetail = () => {
+const MovieDetail = ({user}) => {
     const { id } = useParams();
     const [movie, setMovie] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -38,21 +39,26 @@ const MovieDetail = () => {
     }, [id, activeTab]);
 
     const handleCommentSubmit = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         if (!comment.trim()) return;
 
         try {
-            const response = await axios.post(`${baseUrl}/comments`, {
-                movieId: id,
+            const config = {
+                headers: { Authorization: `Bearer ${user.token}` }
+            };
+
+            const newComment = {
                 content: comment,
                 category: activeTab
-            });
+            };
 
-            console.log("Saved:", response.data);
+            const response = await axios.post(`/api/movies/${id}/comments`, newComment, config);
+
+            setComments(comments.concat(response.data));
             setComment('');
-            fetchComments();
         } catch (err) {
-            console.error("Save failed:", err);
+            console.error("Error posting comment:", err);
+            alert(err.response?.data?.error || "Failed to post comment");
         }
     };
 
@@ -111,16 +117,22 @@ const MovieDetail = () => {
                         <p>No {activeTab} comments yet. Be the first!</p>
                     )}
                 </div>
-                <form onSubmit={handleCommentSubmit} style={styles.form}>
-                    <textarea
-                        placeholder={`Write a ${activeTab} comment...`}
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        style={styles.textarea}
-                    />
-                    <button type="submit" style={styles.submitBtn}>Post Comment</button>
-                </form>
+                {user ? (
+                    <form onSubmit={handleCommentSubmit} style={styles.form}>
+                        <textarea
+                            placeholder={`Write a ${activeTab} comment as ${user.username}...`}
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            style={styles.textarea}
+                        />
+                        <button type="submit" style={styles.submitBtn}>Post Comment</button>
+                    </form>
+                ) : (
+                    <div style={styles.loginPrompt}>
+                        <p>Please <Link to="/login" style={{color: '#e50914', fontWeight: 'bold'}}>Login</Link> to join the discussion.</p>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -137,7 +149,15 @@ const styles = {
     submitBtn: { padding: '10px 20px', backgroundColor: '#0056D2', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' },
     commentCard: { padding: '15px', borderBottom: '1px solid #eee', marginBottom: '10px' },
     commentText: { margin: '0 0 5px 0', fontSize: '16px' },
-    commentDate: { color: '#888', fontSize: '12px' }
+    commentDate: { color: '#888', fontSize: '12px' },
+    loginPrompt: {
+        padding: '20px',
+        textAlign: 'center',
+        backgroundColor: '#f9f9f9',
+        borderRadius: '8px',
+        border: '1px dashed #ccc',
+        marginTop: '20px'
+    }
 };
 
 export default MovieDetail;

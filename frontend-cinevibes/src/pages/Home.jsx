@@ -1,85 +1,141 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import MovieCard from '../components/MovieCard';
-import Header from "../components/Header.jsx";
-import Footer from "../components/Footer.jsx";
 import Pagination from "../components/Pagination.jsx";
-
-
 
 const Home = () => {
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
-    const [ totalPages, setTotalPages] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
     const [search, setSearch] = useState('');
-    const baseUrl = `/api/movies/trending?page=${page}`;
-
-
 
     useEffect(() => {
-        axios.get(baseUrl)
-            .then(response => {
-                window .scrollTo({top:0, behaviour: 'smooth'});
-                setMovies(response.data.movies);
-                setTotalPages(Math.ceil(response.data.totalMovies / response.data.limit));
+        const fetchMovies = async () => {
+            setLoading(true);
+            try {
+                const endpoint = search.trim()
+                    ? `/api/movies/search?title=${search}&page=${page}`
+                    : `/api/movies/trending?page=${page}`;
+
+                const { data } = await axios.get(endpoint);
+
+
+                setMovies(data.movies);
+                setTotalPages(Math.ceil(data.totalMovies / (data.limit || 10)));
+
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (error) {
+                console.error("Fetch error:", error);
+            } finally {
                 setLoading(false);
-            })
-            .catch(error => {
-                console.error("Error fetching movies:", error);
-                setLoading(false);
-            });
-    }, [page]);
+            }
+        };
 
-    useEffect(() => {
-        if (search === '') return;  // if empty, don't search
+        fetchMovies();
+    }, [page, search]);
 
-        axios.get(`/api/movies/search?title=${search}`)
-            .then(response => {
-                setMovies(response.data);
-            })
-            .catch(error => {
-                console.error("Search error:", error);
-            });
-    }, [search]);
-
-    if (loading) return <div>Loading trending movies...</div>;
+    const handleSearchChange = (e) => {
+        setSearch(e.target.value);
+        setPage(1);
+    };
 
     return (
-        <div>
-            <Header>
-            </Header>
-            <input type="text" placeholder="Search movies..." value={search} onChange={(e) => setSearch(e.target.value)} />
-            <div style={styles.container}>
-                <h1>CineVibes</h1>
-                <div style={styles.grid}>
-                    {movies.map(movie => (
-                        <MovieCard key={movie.imdbID} movie={movie} />
-                    ))}
-                </div>
-                <Pagination page={page} setPage={setPage} totalPages={totalPages}></Pagination>
+        <div style={styles.container}>
+            {/* Search Bar Section */}
+            <div style={styles.searchContainer}>
+                <input
+                    type="text"
+                    placeholder="Search for a movie (e.g. Batman, Inception)..."
+                    value={search}
+                    onChange={handleSearchChange}
+                    style={styles.searchInput}
+                />
             </div>
-            <Footer></Footer>
+
+            <h2 style={styles.sectionTitle}>
+                {search ? `Search Results for "${search}"` : "Trending Movies"}
+            </h2>
+
+            {loading ? (
+                <div style={styles.loader}>
+                    <p>Loading the latest blockbusters...</p>
+                </div>
+            ) : (
+                <>
+                    <div style={styles.grid}>
+                        {movies.length > 0 ? (
+                            movies.map(movie => (
+                                <MovieCard key={movie.imdbID || movie._id} movie={movie} />
+                            ))
+                        ) : (
+                            <div style={styles.noResults}>
+                                <p>No movies found. Try a different search term!</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Only show pagination if we have results and more than one page */}
+                    {totalPages > 1 && (
+                        <Pagination
+                            page={page}
+                            setPage={setPage}
+                            totalPages={totalPages}
+                        />
+                    )}
+                </>
+            )}
         </div>
     );
 };
 
 const styles = {
     container: {
-        padding: '40px',
-        backgroundColor: '#F7F9FC',
+        padding: '20px 5%',
+        backgroundColor: '#fdfdfd',
         minHeight: '100vh',
     },
-    header: {
-        textAlign: 'center',
-        color: '#2A3B4C',
-        fontSize: '32px',
-        marginBottom: '40px'
+    searchContainer: {
+        display: 'flex',
+        justifyContent: 'center',
+        margin: '20px 0 40px 0',
+    },
+    searchInput: {
+        width: '100%',
+        maxWidth: '600px',
+        padding: '15px 25px',
+        borderRadius: '30px',
+        border: '1px solid #ced4da',
+        fontSize: '18px',
+        outline: 'none',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+        transition: 'all 0.3s ease',
+    },
+    sectionTitle: {
+        color: '#2d3436',
+        marginBottom: '30px',
+        fontSize: '24px',
+        borderLeft: '5px solid #e50914',
+        paddingLeft: '15px'
     },
     grid: {
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-        gap: '30px'
+        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+        gap: '25px',
+        marginBottom: '40px'
+    },
+    loader: {
+        textAlign: 'center',
+        marginTop: '100px',
+        fontSize: '18px',
+        color: '#636e72'
+    },
+    noResults: {
+        gridColumn: '1 / -1',
+        textAlign: 'center',
+        padding: '50px',
+        color: '#b2bec3',
+        fontSize: '18px'
     }
 };
 
