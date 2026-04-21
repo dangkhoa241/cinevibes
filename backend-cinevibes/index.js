@@ -6,6 +6,8 @@ const mongoose = require("mongoose");
 const movieRoutes = require("./routes/movie");
 const usersRouter = require('./controllers/user');
 const loginRouter = require('./controllers/login');
+const commentRouter = require('./routes/comment');
+const authMiddleware = require('./middleware/auth');
 
 const app = express();
 
@@ -22,6 +24,8 @@ app.use('/api/users', usersRouter);
 app.use('/api/login', loginRouter);
 
 app.use("/api/movies", movieRoutes);
+
+app.use('/api/movies', commentRouter);
 
 app.use("/movie", (req, res, next) => {
     if (req.method === 'GET' && req.accepts('html')) {

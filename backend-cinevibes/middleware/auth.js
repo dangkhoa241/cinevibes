@@ -1,14 +1,21 @@
 const jwt = require('jsonwebtoken');
 
-module.exports = (req, res, next) => {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ error: "Please login to comment" });
+const authMiddleware = (request, response, next) => {
+    const authorization = request.get('authorization');
 
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // Adds user info (id, username) to the request
+    if (authorization && authorization.startsWith('Bearer ')) {
+        const token = authorization.replace('Bearer ', '');
+        const decodedToken = jwt.verify(token, process.env.SECRET);
+
+        if (!decodedToken.id) {
+            return response.status(401).json({ error: 'token invalid' });
+        }
+
+        request.user = decodedToken;
         next();
-    } catch (err) {
-        res.status(401).json({ error: "Invalid token" });
+    } else {
+        return response.status(401).json({ error: 'token missing' });
     }
 };
+
+module.exports = authMiddleware;

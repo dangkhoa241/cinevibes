@@ -2,12 +2,15 @@ const Comment = require("../models/comment");
 
 exports.addComment = async (req, res) => {
     try {
-        const { movieId, content, category } = req.body;
+        const { id } = req.params;
+
+        const { content, category } = req.body;
 
         const newComment = new Comment({
-            movieId,
+            movieId: id,
             content,
-            category
+            category,
+            user: req.user.id
         });
 
         const savedComment = await newComment.save();
