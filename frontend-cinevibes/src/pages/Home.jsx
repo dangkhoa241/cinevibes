@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../api/client';
 import MovieCard from '../components/MovieCard';
 import Pagination from "../components/Pagination.jsx";
 
@@ -18,7 +18,7 @@ const Home = () => {
                     ? `/api/movies/search?title=${search}&page=${page}`
                     : `/api/movies/trending?page=${page}`;
 
-                const { data } = await axios.get(endpoint);
+                const { data } = await api.get(endpoint);
 
 
                 setMovies(data.movies);

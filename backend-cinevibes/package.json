@@ -9,8 +9,6 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
-    "build:ui": "rm -rf dist && cd ../frontend-cinevibes/ && npm run build && cp -r dist ../backend-cinevibes",
-    "deploy": "npm run build:ui && git add . && git commit -m npm_generated_rebuild_of_the_UI && git push",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

@@ -1,5 +1,4 @@
 require("dotenv").config();
-const path = require('path');
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
@@ -11,10 +10,12 @@ const authMiddleware = require('./middleware/auth');
 
 const app = express();
 
+const allowedOrigins = process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(',').map(origin => origin.trim())
+    : true; // no FRONTEND_URL set (e.g. local dev) -> allow any origin
 
-app.use(cors());
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, './dist')));
 
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log("CineVibes connected to MongoDB Atlas"))
@@ -26,13 +27,6 @@ app.use('/api/login', loginRouter);
 app.use("/api/movies", movieRoutes);
 
 app.use('/api/movies', commentRouter);
-
-app.use("/movie", (req, res, next) => {
-    if (req.method === 'GET' && req.accepts('html')) {
-        return res.sendFile(path.join(__dirname, './dist/index.html'));
-    }
-    next();
-});
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

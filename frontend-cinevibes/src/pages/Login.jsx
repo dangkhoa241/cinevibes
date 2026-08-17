@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/client';
 
 const Login = ({ setUser }) => {
     const [username, setUsername] = useState('');
@@ -10,7 +10,7 @@ const Login = ({ setUser }) => {
     const handleLogin = async (event) => {
         event.preventDefault();
         try {
-            const response = await axios.post('/api/login', { username, password });
+            const response = await api.post('/api/login', { username, password });
             const user = response.data;
 
             window.localStorage.setItem('loggedCineVibesUser', JSON.stringify(user));

@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../api/client';
 import { Link } from 'react-router-dom';
 
 const baseUrl = '/api/movies';
@@ -14,7 +14,7 @@ const MovieDetail = ({ user }) => {
     const [comment, setComment] = useState('');
 
     useEffect(() => {
-        axios.get(`${baseUrl}/${id}`)
+        api.get(`${baseUrl}/${id}`)
             .then(res => {
                 setMovie(res.data);
                 setLoading(false);
@@ -27,7 +27,7 @@ const MovieDetail = ({ user }) => {
 
     const fetchComments = async () => {
         try {
-            const res = await axios.get(`${baseUrl}/${id}/comments?category=${activeTab}`);
+            const res = await api.get(`${baseUrl}/${id}/comments?category=${activeTab}`);
             setComments(res.data);
         } catch (err) {
             console.error("Fetch comments failed:", err);
@@ -52,7 +52,7 @@ const MovieDetail = ({ user }) => {
                 category: activeTab
             };
 
-            const response = await axios.post(`/api/movies/${id}/comments`, newComment, config);
+            const response = await api.post(`/api/movies/${id}/comments`, newComment, config);
 
             setComments(comments.concat(response.data));
             setComment('');

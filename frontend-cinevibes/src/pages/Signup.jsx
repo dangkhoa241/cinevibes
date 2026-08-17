@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/client';
 
 const Signup = () => {
     const [username, setUsername] = useState('');
@@ -11,7 +11,7 @@ const Signup = () => {
     const handleSignup = async (event) => {
         event.preventDefault();
         try {
-            await axios.post('/api/users', { username, name, password });
+            await api.post('/api/users', { username, name, password });
             alert('Account created successfully! Please login.');
             navigate('/login');
         } catch (error) {

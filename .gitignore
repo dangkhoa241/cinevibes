@@ -1,3 +1,6 @@
+# Build output (frontend is deployed separately; backend no longer serves it)
+dist/
+
 # Logs
 logs
 *.log
