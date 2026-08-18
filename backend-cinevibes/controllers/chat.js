@@ -1,6 +1,6 @@
-const { GoogleGenAI } = require('@google/genai');
+const Groq = require('groq-sdk');
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const SYSTEM_PROMPT = `You are CineBot, the friendly movie-chat assistant built into CineVibes, a movie discussion site.
 Help users talk about movies: recommendations, plot discussion, trivia, actors, directors, genres.
@@ -24,13 +24,6 @@ const isValidHistory = (messages) => {
     );
 };
 
-// Gemini uses 'model' instead of 'assistant', and wraps text in a parts array.
-const toGeminiContents = (messages) =>
-    messages.map((m) => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }],
-    }));
-
 exports.sendMessage = async (req, res) => {
     const { messages } = req.body;
 
@@ -39,16 +32,16 @@ exports.sendMessage = async (req, res) => {
     }
 
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: toGeminiContents(messages),
-            config: {
-                systemInstruction: SYSTEM_PROMPT,
-                maxOutputTokens: 1024,
-            },
+        const response = await client.chat.completions.create({
+            model: 'openai/gpt-oss-20b',
+            max_completion_tokens: 1024,
+            messages: [
+                { role: 'system', content: SYSTEM_PROMPT },
+                ...messages,
+            ],
         });
 
-        res.json({ reply: response.text || '' });
+        res.json({ reply: response.choices[0]?.message?.content || '' });
     } catch (err) {
         console.error('Chat request failed:', err.message);
         res.status(502).json({ error: 'CineBot is unavailable right now' });
