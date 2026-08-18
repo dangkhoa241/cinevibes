@@ -6,9 +6,9 @@ const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const BASE_SYSTEM_PROMPT = `You are CineBot, the friendly movie-chat assistant built into CineVibes, a movie discussion site.
 Help users talk about movies: recommendations, plot discussion, trivia, actors, directors, genres.
 Keep replies conversational and concise (a few sentences, unless the user asks for more detail).
-You have a search_movies tool that looks up CineVibes' own movie catalog by title — use it whenever the
-user names a specific movie, so you can check whether it's on the site and answer from its actual data
-instead of guessing. If search_movies finds nothing, say so rather than inventing details.`;
+You have a search_movies tool that looks up CineVibes' own movie catalog — use it whenever the user names
+a specific movie, asks about a year/genre, or wants a "top" or "best" list, so you can answer from real
+catalog data instead of guessing. If search_movies finds nothing, say so rather than inventing details.`;
 
 const MAX_MESSAGES = 20;
 const MAX_MESSAGE_LENGTH = 2000;
@@ -31,23 +31,47 @@ const searchMoviesTool = {
     type: 'function',
     function: {
         name: 'search_movies',
-        description: "Search CineVibes' own movie catalog by title and return matching entries.",
+        description:
+            "Search or filter CineVibes' own movie catalog. All parameters are optional and combine as " +
+            'filters. Use "year" to find movies from a specific release year, "genre" to filter by genre, ' +
+            '"sort" to rank results ("rating" for highest-rated / "top" lists, "year" for newest, "trending" ' +
+            'for most-discussed), and "limit" for how many results to return (e.g. for a "top 5" request). ' +
+            'Omit "title" when the user is asking about a year or genre in general rather than a specific movie.',
         parameters: {
             type: 'object',
             properties: {
                 title: { type: 'string', description: 'Movie title or partial title to search for' },
+                year: { type: 'string', description: 'Release year to filter by, e.g. "2026"' },
+                genre: { type: 'string', description: 'Genre to filter by, e.g. "Comedy"' },
+                sort: { type: 'string', enum: ['rating', 'year', 'trending'], description: 'How to rank results' },
+                limit: { type: 'integer', description: 'Max number of results to return (default 5, max 10)' },
             },
-            required: ['title'],
         },
     },
 };
 
+const SEARCH_SORT_OPTIONS = {
+    rating: { rating: -1, _id: 1 },
+    year: { year: -1, _id: 1 },
+    trending: { discussionCount: -1, year: -1, _id: -1 },
+};
+
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-const runSearchMovies = async (title) => {
-    const movies = await Movie.find({ title: { $regex: escapeRegex(title), $options: 'i' } })
-        .limit(5)
+const runSearchMovies = async ({ title, year, genre, sort, limit }) => {
+    const filter = {};
+    if (title) filter.title = { $regex: escapeRegex(title), $options: 'i' };
+    if (year) filter.year = { $regex: `^${escapeRegex(year)}` };
+    if (genre) filter.genre = { $regex: escapeRegex(genre), $options: 'i' };
+
+    const sortOption = SEARCH_SORT_OPTIONS[sort] || SEARCH_SORT_OPTIONS.trending;
+    const resultLimit = Math.min(Math.max(parseInt(limit, 10) || 5, 1), 10);
+
+    const movies = await Movie.find(filter)
+        .sort(sortOption)
+        .limit(resultLimit)
         .select('title year genre rating director actors plot -_id');
+
     return movies.map((m) => ({
         title: m.title,
         year: m.year,
@@ -111,8 +135,8 @@ exports.sendMessage = async (req, res) => {
                 let results = [];
                 try {
                     const args = JSON.parse(call.function.arguments);
-                    if (call.function.name === 'search_movies' && args.title) {
-                        results = await runSearchMovies(args.title);
+                    if (call.function.name === 'search_movies') {
+                        results = await runSearchMovies(args);
                     }
                 } catch (toolErr) {
                     console.error('Tool execution failed:', toolErr.message);
