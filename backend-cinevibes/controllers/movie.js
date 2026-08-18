@@ -1,7 +1,7 @@
 const Movie = require("../models/movie");
 
 const SORT_OPTIONS = {
-    trending: { discussionCount: -1, _id: 1 },
+    trending: { discussionCount: -1, year: -1, _id: -1 },
     rating: { rating: -1, _id: 1 },
     year: { year: -1, _id: 1 },
 };
