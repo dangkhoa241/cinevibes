@@ -6,6 +6,7 @@ const movieRoutes = require("./routes/movie");
 const usersRouter = require('./controllers/user');
 const loginRouter = require('./controllers/login');
 const commentRouter = require('./routes/comment');
+const chatRouter = require('./routes/chat');
 const authMiddleware = require('./middleware/auth');
 
 const app = express();
@@ -27,6 +28,8 @@ app.use('/api/login', loginRouter);
 app.use("/api/movies", movieRoutes);
 
 app.use('/api/movies', commentRouter);
+
+app.use('/api/chat', chatRouter);
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

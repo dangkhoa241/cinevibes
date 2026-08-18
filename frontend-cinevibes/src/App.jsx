@@ -8,6 +8,7 @@ import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
 import Header from "./components/Header.jsx";
 import Footer from "./components/Footer.jsx";
+import ChatWidget from "./components/ChatWidget.jsx";
 
 function App() {
     const [user, setUser] = useState(null)
@@ -29,6 +30,7 @@ function App() {
               <Route path="/signup" element={<Signup />} />
           </Routes>
           <Footer />
+          <ChatWidget />
       </>
   )
 }
