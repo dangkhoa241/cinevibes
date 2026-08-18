@@ -7,11 +7,11 @@ const { searchListAndGetIDs, crawlAndStoreDetails } = require("./utils/crawl");
 //const targetYears = ["2023", "2024", "2025"];
 
 const keywords = [
-    "Avatar", "Pandora", "Alien World", "Exoplanet",
-    "Jungle", "Rebellion", "Colonization", "Sci-Fi Epic"
+    "action", "love", "future", "war", "space", "mystery",
+    "comedy", "drama", "family", "adventure", "crime", "horror"
 ];
 
-const targetYears = ["2009", "2022", "2023", "2024", "2025"];
+const targetYears = ["2024", "2025", "2026"];
 
 const top100IDs = [
     "tt0111161", "tt0068646", "tt0468569", "tt0071562", "tt0050083",
