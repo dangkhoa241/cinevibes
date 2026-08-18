@@ -33,9 +33,6 @@ const Header = ({ user, setUser }) => {
                 <Link to="/" style={styles.logoContainer}>
                     <h1 style={styles.logoText}>CineVibes</h1>
                 </Link>
-                <nav style={styles.tabs}>
-                    <Link to="/" style={styles.tab}>Trending</Link>
-                </nav>
             </div>
 
             <div style={styles.right}>
@@ -107,16 +104,6 @@ const styles = {
         fontSize: '26px',
         fontWeight: 800,
         letterSpacing: '-1px',
-    },
-    tabs: {
-        display: 'flex',
-        gap: '24px',
-    },
-    tab: {
-        color: '#e5e5e5',
-        textDecoration: 'none',
-        fontSize: '15px',
-        fontWeight: 500,
     },
     right: {
         display: 'flex',
