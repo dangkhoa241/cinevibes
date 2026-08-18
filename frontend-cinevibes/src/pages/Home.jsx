@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api/client';
 import MovieCard from '../components/MovieCard';
 import Pagination from "../components/Pagination.jsx";
@@ -6,9 +7,11 @@ import Pagination from "../components/Pagination.jsx";
 const Home = () => {
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
-    const [search, setSearch] = useState('');
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    const page = parseInt(searchParams.get('page'), 10) || 1;
+    const search = searchParams.get('search') || '';
 
     useEffect(() => {
         const fetchMovies = async () => {
@@ -36,8 +39,21 @@ const Home = () => {
     }, [page, search]);
 
     const handleSearchChange = (e) => {
-        setSearch(e.target.value);
-        setPage(1);
+        const value = e.target.value;
+        setSearchParams(prev => {
+            const params = new URLSearchParams(prev);
+            if (value.trim()) params.set('search', value); else params.delete('search');
+            params.delete('page');
+            return params;
+        });
+    };
+
+    const setPage = (newPage) => {
+        setSearchParams(prev => {
+            const params = new URLSearchParams(prev);
+            if (newPage > 1) params.set('page', newPage); else params.delete('page');
+            return params;
+        });
     };
 
     return (

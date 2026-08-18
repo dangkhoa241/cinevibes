@@ -5,7 +5,9 @@ const Footer = () => {
         <footer style={styles.footer}>
             <div style={styles.top}>
                 <div style={styles.brand}>
-                    <h2 style={styles.logoText}>CineVibes</h2>
+                    <Link to="/" style={styles.logoLink}>
+                        <h2 style={styles.logoText}>CineVibes</h2>
+                    </Link>
                     <p style={styles.tagline}>Discover movies. Discuss every twist, scene, and line.</p>
                 </div>
                 <nav style={styles.nav}>
@@ -40,6 +42,9 @@ const styles = {
     },
     brand: {
         maxWidth: '400px',
+    },
+    logoLink: {
+        textDecoration: 'none',
     },
     logoText: {
         color: '#e50914',
