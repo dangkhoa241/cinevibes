@@ -1,14 +1,31 @@
 const Movie = require("../models/movie");
 
+const SORT_OPTIONS = {
+    trending: { discussionCount: -1, _id: 1 },
+    rating: { rating: -1, _id: 1 },
+    year: { year: -1, _id: 1 },
+};
+
+const buildFilter = (base, { genre, year }) => {
+    const filter = { ...base };
+    if (genre) filter.genre = { $regex: genre, $options: 'i' };
+    if (year) filter.year = { $regex: `^${year}` };
+    return filter;
+};
+
 exports.getTrending = async (req, res) => {
     try {
         const page= parseInt(req.query.page) || 1;
         const limit= 10;
         const skip= (page - 1) * limit;
-        const totalMovies = await Movie.countDocuments();
+        const { genre, year, sort } = req.query;
+        const filter = buildFilter({}, { genre, year });
+        const sortOption = SORT_OPTIONS[sort] || SORT_OPTIONS.trending;
 
-        const trending = await Movie.find()
-            .sort({ discussionCount: -1, _id:1 }) // Based on user comments [cite: 31]
+        const totalMovies = await Movie.countDocuments(filter);
+
+        const trending = await Movie.find(filter)
+            .sort(sortOption)
             .skip(skip)
             .limit(limit);
 
@@ -30,18 +47,17 @@ exports.getMovieDetail = async (req, res) => {
 
 exports.searchMovie = async (req, res) => {
     try {
-        const { title, page = 1, limit = 10 } = req.query;
+        const { title, page = 1, limit = 10, genre, year, sort } = req.query;
         const skip = (page - 1) * limit;
+        const filter = buildFilter({ title: { $regex: title, $options: 'i' } }, { genre, year });
+        const sortOption = SORT_OPTIONS[sort] || SORT_OPTIONS.trending;
 
-        const movies = await Movie.find({
-            title: { $regex: title, $options: 'i' }
-        })
+        const movies = await Movie.find(filter)
+            .sort(sortOption)
             .limit(Number(limit))
             .skip(Number(skip));
 
-        const totalMovies = await Movie.countDocuments({
-            title: { $regex: title, $options: 'i' }
-        });
+        const totalMovies = await Movie.countDocuments(filter);
 
         res.json({
             movies,

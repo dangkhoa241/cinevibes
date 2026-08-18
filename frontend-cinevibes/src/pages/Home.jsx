@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import api from '../api/client';
 import MovieCard from '../components/MovieCard';
 import Pagination from "../components/Pagination.jsx";
+import FilterBar from "../components/FilterBar.jsx";
 
 const Home = () => {
     const [movies, setMovies] = useState([]);
@@ -12,14 +13,23 @@ const Home = () => {
 
     const page = parseInt(searchParams.get('page'), 10) || 1;
     const search = searchParams.get('search') || '';
+    const genre = searchParams.get('genre') || '';
+    const year = searchParams.get('year') || '';
+    const sort = searchParams.get('sort') || 'trending';
 
     useEffect(() => {
         const fetchMovies = async () => {
             setLoading(true);
             try {
+                const params = new URLSearchParams();
+                params.set('page', page);
+                if (genre) params.set('genre', genre);
+                if (year) params.set('year', year);
+                if (sort) params.set('sort', sort);
+
                 const endpoint = search.trim()
-                    ? `/api/movies/search?title=${search}&page=${page}`
-                    : `/api/movies/trending?page=${page}`;
+                    ? `/api/movies/search?title=${encodeURIComponent(search)}&${params.toString()}`
+                    : `/api/movies/trending?${params.toString()}`;
 
                 const { data } = await api.get(endpoint);
 
@@ -36,13 +46,22 @@ const Home = () => {
         };
 
         fetchMovies();
-    }, [page, search]);
+    }, [page, search, genre, year, sort]);
 
     const handleSearchChange = (e) => {
         const value = e.target.value;
         setSearchParams(prev => {
             const params = new URLSearchParams(prev);
             if (value.trim()) params.set('search', value); else params.delete('search');
+            params.delete('page');
+            return params;
+        });
+    };
+
+    const handleFilterChange = (key, value) => {
+        setSearchParams(prev => {
+            const params = new URLSearchParams(prev);
+            if (value) params.set(key, value); else params.delete(key);
             params.delete('page');
             return params;
         });
@@ -57,7 +76,9 @@ const Home = () => {
     };
 
     return (
-        <div style={styles.container}>
+        <>
+            <FilterBar genre={genre} year={year} sort={sort} onFilterChange={handleFilterChange} />
+            <div style={styles.container}>
             {/* Search Bar Section */}
             <div style={styles.searchContainer}>
                 <input
@@ -101,7 +122,8 @@ const Home = () => {
                     )}
                 </>
             )}
-        </div>
+            </div>
+        </>
     );
 };
 
