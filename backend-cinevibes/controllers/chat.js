@@ -1,6 +1,6 @@
-const Anthropic = require('@anthropic-ai/sdk');
+const { GoogleGenAI } = require('@google/genai');
 
-const client = new Anthropic();
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const SYSTEM_PROMPT = `You are CineBot, the friendly movie-chat assistant built into CineVibes, a movie discussion site.
 Help users talk about movies: recommendations, plot discussion, trivia, actors, directors, genres.
@@ -24,6 +24,13 @@ const isValidHistory = (messages) => {
     );
 };
 
+// Gemini uses 'model' instead of 'assistant', and wraps text in a parts array.
+const toGeminiContents = (messages) =>
+    messages.map((m) => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+    }));
+
 exports.sendMessage = async (req, res) => {
     const { messages } = req.body;
 
@@ -32,17 +39,16 @@ exports.sendMessage = async (req, res) => {
     }
 
     try {
-        const response = await client.messages.create({
-            model: 'claude-opus-5',
-            max_tokens: 1024,
-            output_config: { effort: 'low' },
-            system: SYSTEM_PROMPT,
-            messages,
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: toGeminiContents(messages),
+            config: {
+                systemInstruction: SYSTEM_PROMPT,
+                maxOutputTokens: 1024,
+            },
         });
 
-        const reply = response.content.find((block) => block.type === 'text')?.text || '';
-
-        res.json({ reply });
+        res.json({ reply: response.text || '' });
     } catch (err) {
         console.error('Chat request failed:', err.message);
         res.status(502).json({ error: 'CineBot is unavailable right now' });
