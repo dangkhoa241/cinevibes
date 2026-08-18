@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import api from '../api/client';
 
 const ChatIcon = () => (
@@ -20,11 +21,28 @@ const ChatWidget = () => {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [movieContext, setMovieContext] = useState(null);
     const bottomRef = useRef(null);
+    const location = useLocation();
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, open]);
+
+    useEffect(() => {
+        const match = location.pathname.match(/^\/movie\/([^/]+)/);
+        if (!match) {
+            setMovieContext(null);
+            return;
+        }
+
+        let cancelled = false;
+        api.get(`/api/movies/${match[1]}`)
+            .then(({ data }) => { if (!cancelled) setMovieContext(data); })
+            .catch(() => { if (!cancelled) setMovieContext(null); });
+
+        return () => { cancelled = true; };
+    }, [location.pathname]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -38,7 +56,7 @@ const ChatWidget = () => {
         setError(null);
 
         try {
-            const { data } = await api.post('/api/chat', { messages: nextMessages });
+            const { data } = await api.post('/api/chat', { messages: nextMessages, movieContext });
             setMessages([...nextMessages, { role: 'assistant', content: data.reply }]);
         } catch (err) {
             setError(err.response?.data?.error || 'CineBot is unavailable right now.');
