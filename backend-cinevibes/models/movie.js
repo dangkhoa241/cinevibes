@@ -13,4 +13,4 @@ const movieSchema = new mongoose.Schema({
     discussionCount: { type: Number, default: 0 } // For Trending Rankings
 });
 
-module.exports = mongoose.model("Movie", movieSchema);
+module.exports = mongoose.models.Movie || mongoose.model("Movie", movieSchema);

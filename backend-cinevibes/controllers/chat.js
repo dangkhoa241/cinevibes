@@ -97,6 +97,58 @@ Plot: ${movieContext.plot || 'unknown'}
 You can use this directly for questions about "this movie" without needing to search for it.`;
 };
 
+// Runs the tool-calling loop and returns the final reply text. Takes callModel as an
+// explicit argument (rather than reaching for the module-level client) so it can be
+// unit-tested directly with a fake, with no need to mock the groq-sdk module.
+const runChatLoop = async (messages, movieContext, callModel) => {
+    const conversation = [
+        { role: 'system', content: buildSystemPrompt(movieContext) },
+        ...messages,
+    ];
+
+    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+        const response = await callModel(conversation);
+
+        const message = response.choices[0]?.message;
+        const toolCalls = message?.tool_calls;
+
+        if (!toolCalls || toolCalls.length === 0) {
+            return message?.content || '';
+        }
+
+        conversation.push(message);
+
+        for (const call of toolCalls) {
+            let results = [];
+            try {
+                const args = JSON.parse(call.function.arguments);
+                if (call.function.name === 'search_movies') {
+                    results = await runSearchMovies(args);
+                }
+            } catch (toolErr) {
+                console.error('Tool execution failed:', toolErr.message);
+            }
+
+            conversation.push({
+                role: 'tool',
+                tool_call_id: call.id,
+                content: JSON.stringify(results),
+            });
+        }
+    }
+
+    return '';
+};
+
+const callGroq = (conversation) =>
+    client.chat.completions.create({
+        model: 'openai/gpt-oss-20b',
+        max_completion_tokens: 1024,
+        messages: conversation,
+        tools: [searchMoviesTool],
+        tool_choice: 'auto',
+    });
+
 exports.sendMessage = async (req, res) => {
     const { messages, movieContext } = req.body;
 
@@ -105,54 +157,14 @@ exports.sendMessage = async (req, res) => {
     }
 
     try {
-        const conversation = [
-            { role: 'system', content: buildSystemPrompt(movieContext) },
-            ...messages,
-        ];
-
-        let reply = '';
-
-        for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-            const response = await client.chat.completions.create({
-                model: 'openai/gpt-oss-20b',
-                max_completion_tokens: 1024,
-                messages: conversation,
-                tools: [searchMoviesTool],
-                tool_choice: 'auto',
-            });
-
-            const message = response.choices[0]?.message;
-            const toolCalls = message?.tool_calls;
-
-            if (!toolCalls || toolCalls.length === 0) {
-                reply = message?.content || '';
-                break;
-            }
-
-            conversation.push(message);
-
-            for (const call of toolCalls) {
-                let results = [];
-                try {
-                    const args = JSON.parse(call.function.arguments);
-                    if (call.function.name === 'search_movies') {
-                        results = await runSearchMovies(args);
-                    }
-                } catch (toolErr) {
-                    console.error('Tool execution failed:', toolErr.message);
-                }
-
-                conversation.push({
-                    role: 'tool',
-                    tool_call_id: call.id,
-                    content: JSON.stringify(results),
-                });
-            }
-        }
-
+        const reply = await runChatLoop(messages, movieContext, callGroq);
         res.json({ reply });
     } catch (err) {
         console.error('Chat request failed:', err.message);
         res.status(502).json({ error: 'CineBot is unavailable right now' });
     }
 };
+
+exports.runChatLoop = runChatLoop;
+exports.isValidHistory = isValidHistory;
+exports.runSearchMovies = runSearchMovies;
