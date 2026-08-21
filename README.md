@@ -61,7 +61,63 @@ External API:
 ---
 
 ## ⚙️ Installation
-...
+
+### Prerequisites
+- Node.js 18+
+- A MongoDB connection string (e.g. a free [MongoDB Atlas](https://www.mongodb.com/atlas) cluster)
+- A free [OMDB API key](http://www.omdbapi.com/apikey.aspx)
+- A free [Groq API key](https://console.groq.com/keys) (only needed for the CineBot chat assistant)
+
+### 1. Clone the repo
+```bash
+git clone https://github.com/dangkhoa241/cinevibes.git
+cd cinevibes
+```
+
+### 2. Backend setup
+```bash
+cd backend-cinevibes
+npm install
+```
+Create a `.env` file in `backend-cinevibes/`:
+```
+OMDB_API_KEY=your_omdb_key
+MONGODB_URI=your_mongodb_connection_string
+PORT=8000
+SECRET=any_random_string_for_jwt
+GROQ_API_KEY=your_groq_key
+```
+Start the API:
+```bash
+npm run dev
+```
+
+### 3. Frontend setup
+In a separate terminal:
+```bash
+cd frontend-cinevibes
+npm install
+npm run dev
+```
+The app is now available at http://localhost:5173, proxying API calls to the backend on port 8000.
+
+### 4. (Optional) Seed the movie database
+```bash
+cd backend-cinevibes
+node seedDatabase.js
+```
+
+### 5. Running tests
+```bash
+# Backend unit/integration tests
+cd backend-cinevibes && npm test
+
+# Frontend component tests
+cd frontend-cinevibes && npm test
+
+# End-to-end tests (spins up both dev servers automatically)
+cd e2e && npm install && npm test
+```
 
 ---
 
