@@ -1,7 +1,14 @@
 const Groq = require('groq-sdk');
 const Movie = require('../models/movie');
 
-const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// Created lazily (not at module load) so requiring this file never throws just
+// because GROQ_API_KEY isn't set - a missing key should only break the chat
+// endpoint itself, not crash the whole backend process on boot.
+let client;
+const getClient = () => {
+    if (!client) client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    return client;
+};
 
 const BASE_SYSTEM_PROMPT = `You are CineBot, the friendly movie-chat assistant built into CineVibes, a movie discussion site.
 Help users talk about movies: recommendations, plot discussion, trivia, actors, directors, genres.
@@ -141,7 +148,7 @@ const runChatLoop = async (messages, movieContext, callModel) => {
 };
 
 const callGroq = (conversation) =>
-    client.chat.completions.create({
+    getClient().chat.completions.create({
         model: 'openai/gpt-oss-20b',
         max_completion_tokens: 1024,
         messages: conversation,

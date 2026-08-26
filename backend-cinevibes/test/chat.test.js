@@ -4,6 +4,18 @@ import app from '../app.js';
 import { runChatLoop, runSearchMovies } from '../controllers/chat.js';
 import Movie from '../models/movie.js';
 
+describe('module loading', () => {
+    it('does not throw when required without GROQ_API_KEY set', async () => {
+        const originalKey = process.env.GROQ_API_KEY;
+        delete process.env.GROQ_API_KEY;
+        vi.resetModules();
+
+        await expect(import('../controllers/chat.js')).resolves.toBeDefined();
+
+        process.env.GROQ_API_KEY = originalKey;
+    });
+});
+
 describe('POST /api/chat validation', () => {
     it('rejects an empty messages array', async () => {
         const res = await request(app).post('/api/chat').send({ messages: [] });
