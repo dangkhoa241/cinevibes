@@ -8,6 +8,7 @@ const commentSchema = new mongoose.Schema({
         enum: ['normal', 'technical'],
         default: 'normal'
     },
+    isSpoiler: { type: Boolean, default: false },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'

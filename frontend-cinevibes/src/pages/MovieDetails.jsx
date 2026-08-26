@@ -12,6 +12,8 @@ const MovieDetail = ({ user }) => {
     const [activeTab, setActiveTab] = useState('normal');
     const [comments, setComments] = useState([]);
     const [comment, setComment] = useState('');
+    const [isSpoiler, setIsSpoiler] = useState(false);
+    const [revealedIds, setRevealedIds] = useState(() => new Set());
 
     useEffect(() => {
         api.get(`${baseUrl}/${id}`)
@@ -49,17 +51,23 @@ const MovieDetail = ({ user }) => {
 
             const newComment = {
                 content: comment,
-                category: activeTab
+                category: activeTab,
+                isSpoiler
             };
 
             const response = await api.post(`/api/movies/${id}/comments`, newComment, config);
 
             setComments(comments.concat(response.data));
             setComment('');
+            setIsSpoiler(false);
         } catch (err) {
             console.error("Error posting comment:", err);
             alert(err.response?.data?.error || "Failed to post comment");
         }
+    };
+
+    const revealSpoiler = (commentId) => {
+        setRevealedIds((prev) => new Set(prev).add(commentId));
     };
 
     const handleKeyDown = (e) => {
@@ -109,14 +117,30 @@ const MovieDetail = ({ user }) => {
 
                 <div style={styles.commentList}>
                     {comments.length > 0 ? (
-                        comments.map((c) => (
-                            <div key={c._id} style={styles.commentCard}>
-                                <p style={styles.commentText}>{c.content}</p>
-                                <small style={styles.commentDate}>
-                                    {new Date(c.createdAt).toLocaleString()}
-                                </small>
-                            </div>
-                        ))
+                        comments.map((c) => {
+                            const isHidden = c.isSpoiler && !revealedIds.has(c._id);
+                            return (
+                                <div key={c._id} style={styles.commentCard}>
+                                    {isHidden ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => revealSpoiler(c._id)}
+                                            style={styles.spoilerButton}
+                                        >
+                                            ⚠️ Spoiler — click to reveal
+                                        </button>
+                                    ) : (
+                                        <>
+                                            {c.isSpoiler && <span style={styles.spoilerTag}>⚠️ Spoiler</span>}
+                                            <p style={styles.commentText}>{c.content}</p>
+                                        </>
+                                    )}
+                                    <small style={styles.commentDate}>
+                                        {new Date(c.createdAt).toLocaleString()}
+                                    </small>
+                                </div>
+                            );
+                        })
                     ) : (
                         <p style={styles.emptyText}>No {activeTab} comments yet. Be the first!</p>
                     )}
@@ -131,6 +155,14 @@ const MovieDetail = ({ user }) => {
                             onKeyDown={handleKeyDown}
                             style={styles.textarea}
                         />
+                        <label style={styles.spoilerLabel}>
+                            <input
+                                type="checkbox"
+                                checked={isSpoiler}
+                                onChange={(e) => setIsSpoiler(e.target.checked)}
+                            />
+                            Mark as spoiler
+                        </label>
                         <button type="submit" style={styles.submitBtn}>Post Comment</button>
                     </form>
                 ) : (
@@ -211,7 +243,36 @@ const styles = {
     commentText: { margin: '0 0 10px 0', fontSize: '16px', lineHeight: '1.5' },
     commentDate: { color: '#aaa', fontSize: '12px' },
     emptyText: { color: '#999', fontStyle: 'italic' },
+    spoilerTag: {
+        display: 'inline-block',
+        marginBottom: '8px',
+        fontSize: '12px',
+        fontWeight: 'bold',
+        color: '#b8860b',
+    },
+    spoilerButton: {
+        display: 'block',
+        width: '100%',
+        padding: '14px',
+        marginBottom: '10px',
+        backgroundColor: '#fff8e1',
+        border: '1px dashed #e0b400',
+        borderRadius: '6px',
+        color: '#8a6d00',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        textAlign: 'center',
+    },
     form: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end' },
+    spoilerLabel: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        marginBottom: '15px',
+        fontSize: '14px',
+        color: '#555',
+        cursor: 'pointer',
+    },
     textarea: {
         width: '100%',
         height: '100px',

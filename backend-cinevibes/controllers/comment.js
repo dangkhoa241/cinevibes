@@ -4,12 +4,13 @@ exports.addComment = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const { content, category } = req.body;
+        const { content, category, isSpoiler } = req.body;
 
         const newComment = new Comment({
             movieId: id,
             content,
             category,
+            isSpoiler: Boolean(isSpoiler),
             user: req.user.id
         });
 

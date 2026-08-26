@@ -35,6 +35,17 @@ describe('POST /api/movies/:id/comments', () => {
         expect(res.body.content).toBe('Great movie!');
         expect(res.body.category).toBe('technical');
         expect(res.body.movieId).toBe('tt1');
+        expect(res.body.isSpoiler).toBe(false);
+    });
+
+    it('saves a comment marked as a spoiler', async () => {
+        const res = await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'He was dead the whole time!', category: 'normal', isSpoiler: true });
+
+        expect(res.status).toBe(201);
+        expect(res.body.isSpoiler).toBe(true);
     });
 });
 
