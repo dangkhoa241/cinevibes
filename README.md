@@ -1,5 +1,7 @@
 # 🎬 CineVibes
 
+[![CI](https://github.com/dangkhoa241/cinevibes/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/dangkhoa241/cinevibes/actions/workflows/ci.yml)
+
 CineVibes is a full-stack web application designed for movie enthusiasts to explore, discuss, and share opinions about movies in a structured and spoiler-aware environment.
 
 Try it out here: [https://cinevibes-outt.onrender.com/](https://cinevibes-rho.vercel.app/)
@@ -54,6 +56,9 @@ Database:
 Testing:
 - Vitest
 - Playwright / Cypress
+
+CI/CD:
+- GitHub Actions (backend/frontend tests, lint, build, and e2e on every push/PR)
 
 External API:
 - Movie API (OMDB)
