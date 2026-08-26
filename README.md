@@ -118,10 +118,3 @@ cd frontend-cinevibes && npm test
 # End-to-end tests (spins up both dev servers automatically)
 cd e2e && npm install && npm test
 ```
-
----
-
-## 👥 Team Members
-
-- Khoa Tran  
-- Darshana Prafulla Patil  
