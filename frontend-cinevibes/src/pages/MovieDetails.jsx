@@ -25,16 +25,16 @@ const MovieDetail = ({ user }) => {
             });
     }, [id]);
 
-    const fetchComments = async () => {
-        try {
-            const res = await api.get(`${baseUrl}/${id}/comments?category=${activeTab}`);
-            setComments(res.data);
-        } catch (err) {
-            console.error("Fetch comments failed:", err);
-        }
-    };
-
     useEffect(() => {
+        const fetchComments = async () => {
+            try {
+                const res = await api.get(`${baseUrl}/${id}/comments?category=${activeTab}`);
+                setComments(res.data);
+            } catch (err) {
+                console.error("Fetch comments failed:", err);
+            }
+        };
+
         fetchComments();
     }, [id, activeTab]);
 

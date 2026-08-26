@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {Routes, Route} from "react-router-dom";
 import './App.css'
 import './pages/Home.jsx'
@@ -11,15 +11,10 @@ import Footer from "./components/Footer.jsx";
 import ChatWidget from "./components/ChatWidget.jsx";
 
 function App() {
-    const [user, setUser] = useState(null)
-
-    useEffect(() => {
+    const [user, setUser] = useState(() => {
         const loggedUserJSON = window.localStorage.getItem('loggedCineVibesUser')
-        if (loggedUserJSON) {
-            const user = JSON.parse(loggedUserJSON)
-            setUser(user)
-        }
-    }, [])
+        return loggedUserJSON ? JSON.parse(loggedUserJSON) : null
+    })
   return (
       <>
           <Header user={user} setUser={setUser} />

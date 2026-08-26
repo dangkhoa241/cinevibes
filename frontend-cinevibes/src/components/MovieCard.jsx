@@ -36,21 +36,4 @@ const MovieCard = ({ movie }) => {
     );
 };
 
-const styles = {
-    card: {
-        width: '250px',
-        backgroundColor: '#FFFFFF',
-        border: '1px solid #E3E8EE',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
-        transition: 'transform 0.2s ease',
-    },
-    image: { width: '100%', height: '375px', objectFit: 'cover' },
-    info: { padding: '20px' },
-    title: { fontSize: '18px', margin: '0 0 10px 0', color: '#1A232E' },
-    metadata: { fontSize: '14px', color: '#6A7A8C' },
-    rating: { color: '#0056D2', fontWeight: 'bold' }
-};
-
 export default MovieCard;
