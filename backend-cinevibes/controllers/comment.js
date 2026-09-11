@@ -15,7 +15,10 @@ exports.addComment = async (req, res) => {
         });
 
         const savedComment = await newComment.save();
-        res.status(201).json(savedComment);
+        const responseComment = savedComment.toObject();
+        responseComment.user = { _id: req.user.id, username: req.user.username };
+
+        res.status(201).json(responseComment);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -29,7 +32,9 @@ exports.getComments = async (req, res) => {
         const comments = await Comment.find({
             movieId: id,
             category: category
-        }).sort({ createdAt: 1 });
+        })
+            .sort({ createdAt: -1, _id: -1 })
+            .populate('user', 'username');
 
         res.json(comments);
     } catch (err) {

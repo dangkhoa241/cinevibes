@@ -66,4 +66,21 @@ describe('GET /api/movies/:id/comments', () => {
         expect(res.body).toHaveLength(1);
         expect(res.body[0].content).toBe('Normal comment');
     });
+
+    it('returns newest comments first, with the author username populated', async () => {
+        await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'First comment', category: 'normal' });
+
+        await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'Second comment', category: 'normal' });
+
+        const res = await request(app).get('/api/movies/tt1/comments?category=normal');
+
+        expect(res.body.map((c) => c.content)).toEqual(['Second comment', 'First comment']);
+        expect(res.body[0].user.username).toBe('reviewer');
+    });
 });
