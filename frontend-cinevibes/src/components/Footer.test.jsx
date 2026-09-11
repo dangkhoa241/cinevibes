@@ -24,4 +24,14 @@ describe('Footer', () => {
 
         expect(screen.getByText(new RegExp(String(new Date().getFullYear())))).toBeInTheDocument();
     });
+
+    it('credits the author before the copyright line', () => {
+        render(
+            <MemoryRouter>
+                <Footer />
+            </MemoryRouter>
+        );
+
+        expect(screen.getByText(/Khoa Thai Dang Tran.*©/)).toBeInTheDocument();
+    });
 });

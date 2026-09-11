@@ -17,7 +17,9 @@ const Footer = () => {
                 </nav>
             </div>
             <div style={styles.bottom}>
-                <p style={styles.copyright}>© {new Date().getFullYear()} CineVibes. All rights reserved.</p>
+                <p style={styles.copyright}>
+                    Khoa Thai Dang Tran · © {new Date().getFullYear()} CineVibes. All rights reserved.
+                </p>
             </div>
         </footer>
     );
