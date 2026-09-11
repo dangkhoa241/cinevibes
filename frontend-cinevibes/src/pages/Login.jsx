@@ -24,30 +24,75 @@ const Login = ({ setUser }) => {
     };
 
     return (
-        <div style={{ maxWidth: '400px', margin: '100px auto', textAlign: 'center' }}>
-            <h2>Login to CineVibes</h2>
-            <form onSubmit={handleLogin}>
-                <input
-                    type="text"
-                    placeholder="Username"
-                    value={username}
-                    onChange={({ target }) => setUsername(target.value)}
-                    style={{ display: 'block', width: '100%', margin: '10px 0', padding: '10px' }}
-                />
-                <input
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={({ target }) => setPassword(target.value)}
-                    style={{ display: 'block', width: '100%', margin: '10px 0', padding: '10px' }}
-                />
-                <button type="submit" style={{ width: '100%', padding: '10px', backgroundColor: '#e50914', color: 'white', border: 'none', borderRadius: '4px' }}>
-                    Sign In
-                </button>
-            </form>
-            <p>New here? <Link to="/signup">Create an account</Link></p>
+        <div style={styles.page}>
+            <div style={styles.card}>
+                <h2 style={styles.heading}>Login to CineVibes</h2>
+                <form onSubmit={handleLogin}>
+                    <input
+                        type="text"
+                        placeholder="Username"
+                        value={username}
+                        onChange={({ target }) => setUsername(target.value)}
+                        style={styles.input}
+                    />
+                    <input
+                        type="password"
+                        placeholder="Password"
+                        value={password}
+                        onChange={({ target }) => setPassword(target.value)}
+                        style={styles.input}
+                    />
+                    <button type="submit" style={styles.button}>
+                        Sign In
+                    </button>
+                </form>
+                <p style={styles.footerText}>New here? <Link to="/signup" style={styles.link}>Create an account</Link></p>
+            </div>
         </div>
     );
+};
+
+const styles = {
+    page: {
+        maxWidth: '400px',
+        margin: '100px auto',
+        padding: '0 20px',
+        minHeight: 'calc(100vh - 300px)',
+    },
+    card: {
+        backgroundColor: '#1a1a1a',
+        border: '1px solid #262626',
+        borderRadius: '12px',
+        padding: '40px 30px',
+        textAlign: 'center',
+        boxSizing: 'border-box',
+    },
+    heading: { color: '#fff', margin: '0 0 24px 0' },
+    input: {
+        display: 'block',
+        width: '100%',
+        margin: '10px 0',
+        padding: '10px',
+        backgroundColor: '#1f1f1f',
+        border: '1px solid #333',
+        borderRadius: '6px',
+        color: '#fff',
+        fontSize: '14px',
+        boxSizing: 'border-box',
+    },
+    button: {
+        width: '100%',
+        padding: '10px',
+        marginTop: '10px',
+        backgroundColor: '#e50914',
+        color: 'white',
+        border: 'none',
+        borderRadius: '4px',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+    },
+    footerText: { color: '#999', marginTop: '20px' },
+    link: { color: '#e50914', fontWeight: 'bold', textDecoration: 'none' },
 };
 
 export default Login;
