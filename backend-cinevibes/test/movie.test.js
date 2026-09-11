@@ -54,8 +54,8 @@ describe('GET /api/movies/trending', () => {
         expect(res.body.movies.map((m) => m.title).sort()).toEqual(['2024 Movie', '2024 Series']);
     });
 
-    it('paginates with a fixed page size of 10', async () => {
-        const docs = Array.from({ length: 15 }, (_, i) =>
+    it('paginates with a fixed page size of 12', async () => {
+        const docs = Array.from({ length: 18 }, (_, i) =>
             makeMovie({ imdbID: `tt${i}`, title: `Movie ${i}`, year: '2020' })
         );
         await Movie.insertMany(docs);
@@ -63,9 +63,9 @@ describe('GET /api/movies/trending', () => {
         const page1 = await request(app).get('/api/movies/trending?page=1');
         const page2 = await request(app).get('/api/movies/trending?page=2');
 
-        expect(page1.body.movies).toHaveLength(10);
-        expect(page2.body.movies).toHaveLength(5);
-        expect(page1.body.totalMovies).toBe(15);
+        expect(page1.body.movies).toHaveLength(12);
+        expect(page2.body.movies).toHaveLength(6);
+        expect(page1.body.totalMovies).toBe(18);
     });
 });
 

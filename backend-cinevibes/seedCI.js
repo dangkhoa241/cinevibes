@@ -1,13 +1,14 @@
 // Minimal, offline fixture data for the e2e suite in CI.
 // Unlike seedDatabase.js, this never calls OMDB — it just needs enough
-// movies (12, so pagination has a second page) directly in Mongo.
+// movies (more than one page's worth, so pagination has a second page)
+// directly in Mongo.
 require("dotenv").config();
 const mongoose = require("mongoose");
 const Movie = require("./models/movie");
 
 const GENRES = ["Action", "Comedy", "Drama", "Sci-Fi"];
 
-const fixtures = Array.from({ length: 12 }, (_, i) => ({
+const fixtures = Array.from({ length: 18 }, (_, i) => ({
     imdbID: `ci-fixture-${i + 1}`,
     title: `CI Fixture Movie ${i + 1}`,
     year: String(2020 + (i % 6)),

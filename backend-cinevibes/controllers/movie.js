@@ -16,7 +16,7 @@ const buildFilter = (base, { genre, year }) => {
 exports.getTrending = async (req, res) => {
     try {
         const page= parseInt(req.query.page) || 1;
-        const limit= 10;
+        const limit= 12;
         const skip= (page - 1) * limit;
         const { genre, year, sort } = req.query;
         const filter = buildFilter({}, { genre, year });
@@ -47,7 +47,7 @@ exports.getMovieDetail = async (req, res) => {
 
 exports.searchMovie = async (req, res) => {
     try {
-        const { title, page = 1, limit = 10, genre, year, sort } = req.query;
+        const { title, page = 1, limit = 12, genre, year, sort } = req.query;
         const skip = (page - 1) * limit;
         const filter = buildFilter({ title: { $regex: title, $options: 'i' } }, { genre, year });
         const sortOption = SORT_OPTIONS[sort] || SORT_OPTIONS.trending;
