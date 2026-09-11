@@ -1,10 +1,5 @@
 const Movie = require("../models/movie");
-
-const SORT_OPTIONS = {
-    trending: { discussionCount: -1, year: -1, _id: -1 },
-    rating: { rating: -1, _id: 1 },
-    year: { year: -1, _id: 1 },
-};
+const { getSortPipeline } = require("../utils/movieSort");
 
 const buildFilter = (base, { genre, year }) => {
     const filter = { ...base };
@@ -20,14 +15,15 @@ exports.getTrending = async (req, res) => {
         const skip= (page - 1) * limit;
         const { genre, year, sort } = req.query;
         const filter = buildFilter({}, { genre, year });
-        const sortOption = SORT_OPTIONS[sort] || SORT_OPTIONS.trending;
 
         const totalMovies = await Movie.countDocuments(filter);
 
-        const trending = await Movie.find(filter)
-            .sort(sortOption)
-            .skip(skip)
-            .limit(limit);
+        const trending = await Movie.aggregate([
+            { $match: filter },
+            ...getSortPipeline(sort),
+            { $skip: skip },
+            { $limit: limit },
+        ]);
 
         res.json({movies: trending, totalMovies, page, limit});
     } catch (err) {
@@ -50,12 +46,13 @@ exports.searchMovie = async (req, res) => {
         const { title, page = 1, limit = 12, genre, year, sort } = req.query;
         const skip = (page - 1) * limit;
         const filter = buildFilter({ title: { $regex: title, $options: 'i' } }, { genre, year });
-        const sortOption = SORT_OPTIONS[sort] || SORT_OPTIONS.trending;
 
-        const movies = await Movie.find(filter)
-            .sort(sortOption)
-            .limit(Number(limit))
-            .skip(Number(skip));
+        const movies = await Movie.aggregate([
+            { $match: filter },
+            ...getSortPipeline(sort),
+            { $skip: Number(skip) },
+            { $limit: Number(limit) },
+        ]);
 
         const totalMovies = await Movie.countDocuments(filter);
 

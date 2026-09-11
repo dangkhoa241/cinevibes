@@ -54,6 +54,18 @@ describe('GET /api/movies/trending', () => {
         expect(res.body.movies.map((m) => m.title).sort()).toEqual(['2024 Movie', '2024 Series']);
     });
 
+    it('sorts by rating numerically, not lexicographically, and puts N/A last', async () => {
+        // A naive string sort would rank "N/A" first (N > any digit) and "9.5" above
+        // "10.0" (since '9' > '1' as the first character) - both wrong numerically.
+        await Movie.create(makeMovie({ imdbID: 'tt1', title: 'Ten', rating: '10.0' }));
+        await Movie.create(makeMovie({ imdbID: 'tt2', title: 'NineFive', rating: '9.5' }));
+        await Movie.create(makeMovie({ imdbID: 'tt3', title: 'Unrated', rating: 'N/A' }));
+
+        const res = await request(app).get('/api/movies/trending?sort=rating');
+
+        expect(res.body.movies.map((m) => m.title)).toEqual(['Ten', 'NineFive', 'Unrated']);
+    });
+
     it('paginates with a fixed page size of 12', async () => {
         const docs = Array.from({ length: 18 }, (_, i) =>
             makeMovie({ imdbID: `tt${i}`, title: `Movie ${i}`, year: '2020' })
