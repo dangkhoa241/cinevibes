@@ -1,5 +1,6 @@
 const Groq = require('groq-sdk');
 const Movie = require('../models/movie');
+const { getSortPipeline } = require('../utils/movieSort');
 
 // Created lazily (not at module load) so requiring this file never throws just
 // because GROQ_API_KEY isn't set - a missing key should only break the chat
@@ -15,7 +16,13 @@ Help users talk about movies: recommendations, plot discussion, trivia, actors, 
 Keep replies conversational and concise (a few sentences, unless the user asks for more detail).
 You have a search_movies tool that looks up CineVibes' own movie catalog — use it whenever the user names
 a specific movie, asks about a year/genre, or wants a "top" or "best" list, so you can answer from real
-catalog data instead of guessing. If search_movies finds nothing, say so rather than inventing details.`;
+catalog data instead of guessing. If search_movies finds nothing, say so rather than inventing details.
+Whenever you mention a movie that came from search_movies, link it using Markdown in the exact form
+[Movie Title](/movie/imdbID) using that movie's real imdbID field, so the user can click through to its
+page on the site. Only link movies that actually came from search_movies - never invent an imdbID.
+The client only renders that one link syntax, nothing else - do not use any other Markdown (no bold,
+no italics, no headings, no bullet/numbered list syntax). Write plain sentences instead, e.g. "1. [Title](/movie/id)
+is a great pick because..." rather than wrapping the title in ** or using a Markdown list.`;
 
 const MAX_MESSAGES = 20;
 const MAX_MESSAGE_LENGTH = 2000;
@@ -57,12 +64,6 @@ const searchMoviesTool = {
     },
 };
 
-const SEARCH_SORT_OPTIONS = {
-    rating: { rating: -1, _id: 1 },
-    year: { year: -1, _id: 1 },
-    trending: { discussionCount: -1, year: -1, _id: -1 },
-};
-
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const runSearchMovies = async ({ title, year, genre, sort, limit }) => {
@@ -71,15 +72,17 @@ const runSearchMovies = async ({ title, year, genre, sort, limit }) => {
     if (year) filter.year = { $regex: `^${escapeRegex(year)}` };
     if (genre) filter.genre = { $regex: escapeRegex(genre), $options: 'i' };
 
-    const sortOption = SEARCH_SORT_OPTIONS[sort] || SEARCH_SORT_OPTIONS.trending;
     const resultLimit = Math.min(Math.max(parseInt(limit, 10) || 5, 1), 10);
 
-    const movies = await Movie.find(filter)
-        .sort(sortOption)
-        .limit(resultLimit)
-        .select('title year genre rating director actors plot -_id');
+    const movies = await Movie.aggregate([
+        { $match: filter },
+        ...getSortPipeline(sort),
+        { $limit: resultLimit },
+        { $project: { imdbID: 1, title: 1, year: 1, genre: 1, rating: 1, director: 1, actors: 1, plot: 1, _id: 0 } },
+    ]);
 
     return movies.map((m) => ({
+        imdbID: m.imdbID,
         title: m.title,
         year: m.year,
         genre: m.genre,

@@ -18,3 +18,9 @@ Object.defineProperty(window, 'localStorage', {
     writable: true,
     configurable: true,
 });
+
+// jsdom doesn't implement scrollIntoView at all - stub it out so components
+// that call it (e.g. auto-scrolling a chat panel) don't crash under test.
+if (!Element.prototype.scrollIntoView) {
+    Element.prototype.scrollIntoView = () => {};
+}

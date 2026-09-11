@@ -119,6 +119,26 @@ describe('runSearchMovies', () => {
         expect(results.map((m) => m.title)).toEqual(['A', 'B']);
     });
 
+    it('sorts by rating numerically, not lexicographically, and puts N/A last', async () => {
+        // A naive string sort would rank "N/A" first (N > any digit) and "9.5" above
+        // "10.0" (since '9' > '1' as the first character) - both wrong numerically.
+        await Movie.create({ imdbID: 'tt1', title: 'Ten', rating: '10.0' });
+        await Movie.create({ imdbID: 'tt2', title: 'NineFive', rating: '9.5' });
+        await Movie.create({ imdbID: 'tt3', title: 'Unrated', rating: 'N/A' });
+
+        const results = await runSearchMovies({ sort: 'rating', limit: 5 });
+
+        expect(results.map((m) => m.title)).toEqual(['Ten', 'NineFive', 'Unrated']);
+    });
+
+    it('includes imdbID so the model can link to the movie page', async () => {
+        await Movie.create({ imdbID: 'tt1', title: 'A', year: '2024', rating: '9.0' });
+
+        const results = await runSearchMovies({ title: 'A' });
+
+        expect(results[0].imdbID).toBe('tt1');
+    });
+
     it('caps the limit at 10', async () => {
         const docs = Array.from({ length: 15 }, (_, i) => ({
             imdbID: `tt${i}`,

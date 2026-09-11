@@ -1,6 +1,34 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import api from '../api/client';
+
+// Matches the [Movie Title](/movie/imdbID) links CineBot is instructed to emit
+// when recommending a movie found via its search_movies tool.
+const MOVIE_LINK_REGEX = /\[([^\]]+)\]\(\s*(\/movie\/[^\s)]+)\s*\)/g;
+
+const renderMessageContent = (content, onLinkClick) => {
+    const parts = [];
+    let lastIndex = 0;
+    let key = 0;
+
+    for (const match of content.matchAll(MOVIE_LINK_REGEX)) {
+        if (match.index > lastIndex) {
+            parts.push(content.slice(lastIndex, match.index));
+        }
+        parts.push(
+            <Link key={key++} to={match[2]} onClick={onLinkClick} style={styles.movieLink}>
+                {match[1]}
+            </Link>
+        );
+        lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < content.length) {
+        parts.push(content.slice(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : content;
+};
 
 const ChatIcon = () => (
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -87,7 +115,7 @@ const ChatWidget = () => {
                                 key={i}
                                 style={m.role === 'user' ? styles.userBubble : styles.botBubble}
                             >
-                                {m.content}
+                                {renderMessageContent(m.content, () => setOpen(false))}
                             </div>
                         ))}
                         {loading && <div style={styles.botBubble}>…</div>}
@@ -211,6 +239,11 @@ const styles = {
         maxWidth: '85%',
         lineHeight: 1.4,
         whiteSpace: 'pre-wrap',
+    },
+    movieLink: {
+        color: '#ff6b6b',
+        fontWeight: 'bold',
+        textDecoration: 'underline',
     },
     errorText: {
         color: '#ff6b6b',
