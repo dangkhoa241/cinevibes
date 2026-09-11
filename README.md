@@ -15,29 +15,29 @@ Try it out here: [https://cinevibes-outt.onrender.com/](https://cinevibes-rho.ve
 - View movie posters, titles, and basic information
 
 ### 🧠 Structured Discussions
-- Discussions are divided into categories:
-  - Character / Actor
-  - Plot Twist
-  - Script / Dialogue
-  - Memorable Scenes
+- Comments are split into two categories: General Chat and Technical Analysis
+- Finer-grained categories (Character/Actor, Plot Twist, Script/Dialogue, Memorable Scenes) — **not implemented yet**
 
 ### 💬 Comment System
-- Add comments under specific categories
-- Like and interact with other users' comments
+- Add comments under specific categories, with the author's username shown
+- Like and interact with other users' comments — **not implemented yet**
+
+### 🤖 CineBot (AI Chat Assistant)
+- Chat with an AI assistant for movie recommendations and discussion
+- Automatically pulls in the current movie's details when chatting from its page
+- Can search CineVibes' own movie catalog (by title, year, genre) to answer questions with real data
 
 ### ⚠️ Spoiler Protection
 - Mark comments as spoilers
 - Spoiler content is hidden by default and can be revealed manually
 
 ### 🔥 Trending Rankings
-- Discover the most discussed movies based on:
-  - Daily activity
-  - Weekly activity
-  - Monthly activity
+- Movies are ranked by overall discussion activity
+- Separate daily / weekly / monthly trending breakdowns — **not implemented yet** (currently a single overall ranking)
 
 ### 🔍 Search & Filtering
 - Search movies by title
-- Filter by categories or popularity
+- Filter by genre and release year, sort by rating, year, or trending activity
 
 ---
 
