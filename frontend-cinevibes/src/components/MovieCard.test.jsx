@@ -29,6 +29,13 @@ describe('MovieCard', () => {
         expect(screen.getByText(/8.8/)).toBeInTheDocument();
     });
 
+    it('trims a year range down to the start year', () => {
+        renderCard({ imdbID: 'tt1', title: 'Ongoing Series', year: '2026–2027', rating: '7.0' });
+
+        expect(screen.getByText(/2026/)).toBeInTheDocument();
+        expect(screen.queryByText(/2026–2027/)).not.toBeInTheDocument();
+    });
+
     it('navigates to the movie detail page on click', () => {
         renderCard({ imdbID: 'tt1', title: 'Inception', year: '2010', rating: '8.8' });
 
