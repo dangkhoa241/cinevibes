@@ -20,7 +20,8 @@ Try it out here: [https://cinevibes-outt.onrender.com/](https://cinevibes-rho.ve
 
 ### 💬 Comment System
 - Add comments under specific categories, with the author's username shown
-- Like and interact with other users' comments — **not implemented yet**
+- Like other users' comments
+- Edit or delete your own comments
 
 ### 🤖 CineBot (AI Chat Assistant)
 - Chat with an AI assistant for movie recommendations and discussion
