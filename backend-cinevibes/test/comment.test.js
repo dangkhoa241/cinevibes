@@ -16,6 +16,16 @@ beforeEach(async () => {
     token = loginRes.body.token;
 });
 
+describe('POST /api/login', () => {
+    it('includes the user id, so the frontend can tell which comments it has liked', async () => {
+        const res = await request(app)
+            .post('/api/login')
+            .send({ username: 'reviewer', password: 'secret123' });
+
+        expect(res.body.id).toBeDefined();
+    });
+});
+
 describe('POST /api/movies/:id/comments', () => {
     it('rejects a request with no auth token', async () => {
         const res = await request(app)
@@ -46,6 +56,65 @@ describe('POST /api/movies/:id/comments', () => {
 
         expect(res.status).toBe(201);
         expect(res.body.isSpoiler).toBe(true);
+    });
+});
+
+describe('POST /api/movies/:id/comments/:commentId/like', () => {
+    it('rejects a like request with no auth token', async () => {
+        const posted = await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'Great movie!', category: 'normal' });
+
+        const res = await request(app).post(`/api/movies/tt1/comments/${posted.body._id}/like`);
+
+        expect(res.status).toBe(401);
+    });
+
+    it('returns 404 for a comment that does not exist', async () => {
+        const res = await request(app)
+            .post('/api/movies/tt1/comments/000000000000000000000000/like')
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toBe(404);
+    });
+
+    it('likes a comment, then unliking it removes the like', async () => {
+        const posted = await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'Great movie!', category: 'normal' });
+
+        const likeRes = await request(app)
+            .post(`/api/movies/tt1/comments/${posted.body._id}/like`)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(likeRes.status).toBe(200);
+        expect(likeRes.body).toEqual({ likeCount: 1, liked: true });
+
+        const unlikeRes = await request(app)
+            .post(`/api/movies/tt1/comments/${posted.body._id}/like`)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(unlikeRes.body).toEqual({ likeCount: 0, liked: false });
+    });
+
+    it('does not double-count a like from the same user liking twice in a row without unliking', async () => {
+        const posted = await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'Great movie!', category: 'normal' });
+
+        await request(app)
+            .post(`/api/movies/tt1/comments/${posted.body._id}/like`)
+            .set('Authorization', `Bearer ${token}`);
+
+        // A second like from the SAME user toggles it off (unlike), not a second like.
+        const secondCall = await request(app)
+            .post(`/api/movies/tt1/comments/${posted.body._id}/like`)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(secondCall.body.likeCount).toBe(0);
     });
 });
 

@@ -5,6 +5,18 @@ import { Link } from 'react-router-dom';
 
 const baseUrl = '/api/movies';
 
+const HeartIcon = ({ filled }) => (
+    <svg
+        width="15" height="15" viewBox="0 0 24 24"
+        fill={filled ? '#e50914' : 'none'}
+        stroke={filled ? '#e50914' : 'currentColor'}
+        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+        style={{ verticalAlign: 'middle' }}
+    >
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+    </svg>
+);
+
 const formatRelativeTime = (dateString) => {
     const diffMs = Date.now() - new Date(dateString).getTime();
     const diffSec = Math.floor(diffMs / 1000);
@@ -43,20 +55,29 @@ const MovieDetail = ({ user }) => {
     }, [id]);
 
     useEffect(() => {
+        const annotateLikes = (list) => list.map(c => ({
+            ...c,
+            likeCount: c.likedBy?.length || 0,
+            liked: user ? (c.likedBy || []).some(uid => uid === user.id) : false,
+        }));
+
         const fetchComments = async () => {
             try {
                 const [normalRes, technicalRes] = await Promise.all([
                     api.get(`${baseUrl}/${id}/comments?category=normal`),
                     api.get(`${baseUrl}/${id}/comments?category=technical`),
                 ]);
-                setCommentsByCategory({ normal: normalRes.data, technical: technicalRes.data });
+                setCommentsByCategory({
+                    normal: annotateLikes(normalRes.data),
+                    technical: annotateLikes(technicalRes.data),
+                });
             } catch (err) {
                 console.error("Fetch comments failed:", err);
             }
         };
 
         fetchComments();
-    }, [id]);
+    }, [id, user]);
 
     const handleCommentSubmit = async (e) => {
         if (e) e.preventDefault();
@@ -74,10 +95,11 @@ const MovieDetail = ({ user }) => {
             };
 
             const response = await api.post(`/api/movies/${id}/comments`, newComment, config);
+            const postedComment = { ...response.data, likeCount: 0, liked: false };
 
             setCommentsByCategory(prev => ({
                 ...prev,
-                [activeTab]: [response.data, ...prev[activeTab]]
+                [activeTab]: [postedComment, ...prev[activeTab]]
             }));
             setComment('');
             setIsSpoiler(false);
@@ -89,6 +111,24 @@ const MovieDetail = ({ user }) => {
 
     const revealSpoiler = (commentId) => {
         setRevealedIds((prev) => new Set(prev).add(commentId));
+    };
+
+    const handleToggleLike = async (commentId) => {
+        if (!user) return;
+
+        try {
+            const config = { headers: { Authorization: `Bearer ${user.token}` } };
+            const { data } = await api.post(`/api/movies/${id}/comments/${commentId}/like`, {}, config);
+
+            setCommentsByCategory(prev => ({
+                ...prev,
+                [activeTab]: prev[activeTab].map(c =>
+                    c._id === commentId ? { ...c, likeCount: data.likeCount, liked: data.liked } : c
+                )
+            }));
+        } catch (err) {
+            console.error("Error toggling like:", err);
+        }
     };
 
     const handleKeyDown = (e) => {
@@ -169,6 +209,15 @@ const MovieDetail = ({ user }) => {
                                             <p style={styles.commentText}>{c.content}</p>
                                         </>
                                     )}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleToggleLike(c._id)}
+                                        disabled={!user}
+                                        style={c.liked ? styles.likeButtonActive : styles.likeButton}
+                                        aria-label={c.liked ? 'Unlike comment' : 'Like comment'}
+                                    >
+                                        <HeartIcon filled={c.liked} /> {c.likeCount}
+                                    </button>
                                 </div>
                             );
                         })
@@ -302,6 +351,33 @@ const styles = {
     commentText: { margin: '0', fontSize: '16px', lineHeight: '1.5', color: '#e5e5e5' },
     commentDate: { color: '#888', fontSize: '12px' },
     emptyText: { color: '#888', fontStyle: 'italic' },
+    likeButton: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        marginTop: '12px',
+        padding: '4px 10px',
+        borderRadius: '20px',
+        border: '1px solid #333',
+        backgroundColor: 'transparent',
+        color: '#999',
+        fontSize: '13px',
+        cursor: 'pointer',
+    },
+    likeButtonActive: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        marginTop: '12px',
+        padding: '4px 10px',
+        borderRadius: '20px',
+        border: '1px solid #e50914',
+        backgroundColor: 'rgba(229, 9, 20, 0.1)',
+        color: '#e50914',
+        fontSize: '13px',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+    },
     spoilerTag: {
         display: 'inline-block',
         marginBottom: '8px',

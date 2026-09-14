@@ -24,6 +24,30 @@ exports.addComment = async (req, res) => {
     }
 };
 
+exports.toggleLike = async (req, res) => {
+    try {
+        const { commentId } = req.params;
+        const userId = req.user.id;
+
+        const comment = await Comment.findById(commentId);
+        if (!comment) return res.status(404).json({ error: 'Comment not found' });
+
+        const alreadyLiked = comment.likedBy.some((likerId) => likerId.toString() === userId);
+
+        if (alreadyLiked) {
+            comment.likedBy.pull(userId);
+        } else {
+            comment.likedBy.push(userId);
+        }
+
+        await comment.save();
+
+        res.json({ likeCount: comment.likedBy.length, liked: !alreadyLiked });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 exports.getComments = async (req, res) => {
     try {
         const { id } = req.params;
