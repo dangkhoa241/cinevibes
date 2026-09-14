@@ -118,6 +118,74 @@ describe('POST /api/movies/:id/comments/:commentId/like', () => {
     });
 });
 
+describe('PUT /api/movies/:id/comments/:commentId', () => {
+    it('lets the author edit their own comment', async () => {
+        const posted = await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'Original text', category: 'normal' });
+
+        const res = await request(app)
+            .put(`/api/movies/tt1/comments/${posted.body._id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'Edited text' });
+
+        expect(res.status).toBe(200);
+        expect(res.body.content).toBe('Edited text');
+    });
+
+    it('rejects editing someone else\'s comment', async () => {
+        const posted = await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'Original text', category: 'normal' });
+
+        await request(app).post('/api/users').send({ username: 'other', name: 'Other', password: 'secret123' });
+        const otherLogin = await request(app).post('/api/login').send({ username: 'other', password: 'secret123' });
+
+        const res = await request(app)
+            .put(`/api/movies/tt1/comments/${posted.body._id}`)
+            .set('Authorization', `Bearer ${otherLogin.body.token}`)
+            .send({ content: 'Hijacked!' });
+
+        expect(res.status).toBe(403);
+    });
+});
+
+describe('DELETE /api/movies/:id/comments/:commentId', () => {
+    it('lets the author delete their own comment', async () => {
+        const posted = await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'Delete me', category: 'normal' });
+
+        const res = await request(app)
+            .delete(`/api/movies/tt1/comments/${posted.body._id}`)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toBe(204);
+
+        const remaining = await request(app).get('/api/movies/tt1/comments?category=normal');
+        expect(remaining.body).toHaveLength(0);
+    });
+
+    it('rejects deleting someone else\'s comment', async () => {
+        const posted = await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'Not yours', category: 'normal' });
+
+        await request(app).post('/api/users').send({ username: 'other', name: 'Other', password: 'secret123' });
+        const otherLogin = await request(app).post('/api/login').send({ username: 'other', password: 'secret123' });
+
+        const res = await request(app)
+            .delete(`/api/movies/tt1/comments/${posted.body._id}`)
+            .set('Authorization', `Bearer ${otherLogin.body.token}`);
+
+        expect(res.status).toBe(403);
+    });
+});
+
 describe('GET /api/movies/:id/comments', () => {
     it('only returns comments for the requested category', async () => {
         await request(app)

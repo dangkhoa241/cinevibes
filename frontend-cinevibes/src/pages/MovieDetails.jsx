@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../api/client';
 import { Link } from 'react-router-dom';
 
@@ -39,8 +39,12 @@ const MovieDetail = ({ user }) => {
     const [comment, setComment] = useState('');
     const [isSpoiler, setIsSpoiler] = useState(false);
     const [revealedIds, setRevealedIds] = useState(() => new Set());
+    const [editingId, setEditingId] = useState(null);
+    const [editContent, setEditContent] = useState('');
+    const [editIsSpoiler, setEditIsSpoiler] = useState(false);
 
     const comments = commentsByCategory[activeTab] || [];
+    const commentsRequestId = useRef(0);
 
     useEffect(() => {
         api.get(`${baseUrl}/${id}`)
@@ -54,30 +58,42 @@ const MovieDetail = ({ user }) => {
             });
     }, [id]);
 
-    useEffect(() => {
+    // Pure data-fetch, no setState - safe to call from an effect body directly.
+    const fetchAnnotatedComments = useCallback(async () => {
         const annotateLikes = (list) => list.map(c => ({
             ...c,
             likeCount: c.likedBy?.length || 0,
             liked: user ? (c.likedBy || []).some(uid => uid === user.id) : false,
         }));
-
-        const fetchComments = async () => {
-            try {
-                const [normalRes, technicalRes] = await Promise.all([
-                    api.get(`${baseUrl}/${id}/comments?category=normal`),
-                    api.get(`${baseUrl}/${id}/comments?category=technical`),
-                ]);
-                setCommentsByCategory({
-                    normal: annotateLikes(normalRes.data),
-                    technical: annotateLikes(technicalRes.data),
-                });
-            } catch (err) {
-                console.error("Fetch comments failed:", err);
-            }
-        };
-
-        fetchComments();
+        const [normalRes, technicalRes] = await Promise.all([
+            api.get(`${baseUrl}/${id}/comments?category=normal`),
+            api.get(`${baseUrl}/${id}/comments?category=technical`),
+        ]);
+        return { normal: annotateLikes(normalRes.data), technical: annotateLikes(technicalRes.data) };
     }, [id, user]);
+
+    // Guards against a stale, slow-to-resolve GET clobbering state that a
+    // later mutation (post/edit/delete/like) has already refreshed - only the
+    // most recently issued request is allowed to apply its result. Called
+    // directly from event handlers, never from inside an effect.
+    const refreshComments = useCallback(async () => {
+        const requestId = ++commentsRequestId.current;
+        try {
+            const data = await fetchAnnotatedComments();
+            if (requestId === commentsRequestId.current) setCommentsByCategory(data);
+        } catch (err) {
+            console.error("Fetch comments failed:", err);
+        }
+    }, [fetchAnnotatedComments]);
+
+    useEffect(() => {
+        const requestId = ++commentsRequestId.current;
+        fetchAnnotatedComments()
+            .then((data) => {
+                if (requestId === commentsRequestId.current) setCommentsByCategory(data);
+            })
+            .catch((err) => console.error("Fetch comments failed:", err));
+    }, [fetchAnnotatedComments]);
 
     const handleCommentSubmit = async (e) => {
         if (e) e.preventDefault();
@@ -94,13 +110,8 @@ const MovieDetail = ({ user }) => {
                 isSpoiler
             };
 
-            const response = await api.post(`/api/movies/${id}/comments`, newComment, config);
-            const postedComment = { ...response.data, likeCount: 0, liked: false };
-
-            setCommentsByCategory(prev => ({
-                ...prev,
-                [activeTab]: [postedComment, ...prev[activeTab]]
-            }));
+            await api.post(`/api/movies/${id}/comments`, newComment, config);
+            await refreshComments();
             setComment('');
             setIsSpoiler(false);
         } catch (err) {
@@ -114,20 +125,60 @@ const MovieDetail = ({ user }) => {
     };
 
     const handleToggleLike = async (commentId) => {
-        if (!user) return;
+        if (!user) {
+            alert('Please login to like a comment.');
+            return;
+        }
 
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            const { data } = await api.post(`/api/movies/${id}/comments/${commentId}/like`, {}, config);
-
-            setCommentsByCategory(prev => ({
-                ...prev,
-                [activeTab]: prev[activeTab].map(c =>
-                    c._id === commentId ? { ...c, likeCount: data.likeCount, liked: data.liked } : c
-                )
-            }));
+            await api.post(`/api/movies/${id}/comments/${commentId}/like`, {}, config);
+            await refreshComments();
         } catch (err) {
             console.error("Error toggling like:", err);
+        }
+    };
+
+    const startEdit = (c) => {
+        setEditingId(c._id);
+        setEditContent(c.content);
+        setEditIsSpoiler(c.isSpoiler);
+    };
+
+    const cancelEdit = () => {
+        setEditingId(null);
+        setEditContent('');
+        setEditIsSpoiler(false);
+    };
+
+    const saveEdit = async (commentId) => {
+        if (!editContent.trim()) return;
+
+        try {
+            const config = { headers: { Authorization: `Bearer ${user.token}` } };
+            await api.put(
+                `/api/movies/${id}/comments/${commentId}`,
+                { content: editContent, isSpoiler: editIsSpoiler },
+                config
+            );
+            await refreshComments();
+            cancelEdit();
+        } catch (err) {
+            console.error("Error editing comment:", err);
+            alert(err.response?.data?.error || "Failed to edit comment");
+        }
+    };
+
+    const handleDelete = async (commentId) => {
+        if (!window.confirm('Delete this comment?')) return;
+
+        try {
+            const config = { headers: { Authorization: `Bearer ${user.token}` } };
+            await api.delete(`/api/movies/${id}/comments/${commentId}`, config);
+            await refreshComments();
+        } catch (err) {
+            console.error("Error deleting comment:", err);
+            alert(err.response?.data?.error || "Failed to delete comment");
         }
     };
 
@@ -189,13 +240,44 @@ const MovieDetail = ({ user }) => {
                     {comments.length > 0 ? (
                         comments.map((c) => {
                             const isHidden = c.isSpoiler && !revealedIds.has(c._id);
+                            const isOwner = user && c.user?.id === user.id;
+                            const isEditing = editingId === c._id;
                             return (
                                 <div key={c._id} style={styles.commentCard}>
                                     <div style={styles.commentHeader}>
                                         <span style={styles.commentAuthor}>{c.user?.username || 'Anonymous'}</span>
-                                        <span style={styles.commentDate}>{formatRelativeTime(c.createdAt)}</span>
+                                        <div style={styles.commentHeaderRight}>
+                                            <span style={styles.commentDate}>{formatRelativeTime(c.createdAt)}</span>
+                                            {isOwner && !isEditing && (
+                                                <>
+                                                    <button type="button" onClick={() => startEdit(c)} style={styles.ownerActionBtn}>Edit</button>
+                                                    <button type="button" onClick={() => handleDelete(c._id)} style={styles.ownerActionBtn}>Delete</button>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
-                                    {isHidden ? (
+
+                                    {isEditing ? (
+                                        <div style={styles.editForm}>
+                                            <textarea
+                                                value={editContent}
+                                                onChange={(e) => setEditContent(e.target.value)}
+                                                style={styles.textarea}
+                                            />
+                                            <label style={styles.spoilerLabel}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={editIsSpoiler}
+                                                    onChange={(e) => setEditIsSpoiler(e.target.checked)}
+                                                />
+                                                Mark as spoiler
+                                            </label>
+                                            <div style={styles.editActions}>
+                                                <button type="button" onClick={() => saveEdit(c._id)} style={styles.submitBtn}>Save</button>
+                                                <button type="button" onClick={cancelEdit} style={styles.cancelBtn}>Cancel</button>
+                                            </div>
+                                        </div>
+                                    ) : isHidden ? (
                                         <button
                                             type="button"
                                             onClick={() => revealSpoiler(c._id)}
@@ -209,15 +291,17 @@ const MovieDetail = ({ user }) => {
                                             <p style={styles.commentText}>{c.content}</p>
                                         </>
                                     )}
-                                    <button
-                                        type="button"
-                                        onClick={() => handleToggleLike(c._id)}
-                                        disabled={!user}
-                                        style={c.liked ? styles.likeButtonActive : styles.likeButton}
-                                        aria-label={c.liked ? 'Unlike comment' : 'Like comment'}
-                                    >
-                                        <HeartIcon filled={c.liked} /> {c.likeCount}
-                                    </button>
+
+                                    {!isEditing && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleToggleLike(c._id)}
+                                            style={c.liked ? styles.likeButtonActive : styles.likeButton}
+                                            aria-label={c.liked ? 'Unlike comment' : 'Like comment'}
+                                        >
+                                            <HeartIcon filled={c.liked} /> {c.likeCount}
+                                        </button>
+                                    )}
                                 </div>
                             );
                         })
@@ -348,9 +432,30 @@ const styles = {
         marginBottom: '8px',
     },
     commentAuthor: { color: '#fff', fontWeight: 'bold', fontSize: '14px' },
+    commentHeaderRight: { display: 'flex', alignItems: 'center', gap: '12px' },
+    ownerActionBtn: {
+        background: 'none',
+        border: 'none',
+        color: '#888',
+        fontSize: '12px',
+        cursor: 'pointer',
+        padding: 0,
+        textDecoration: 'underline',
+    },
     commentText: { margin: '0', fontSize: '16px', lineHeight: '1.5', color: '#e5e5e5' },
     commentDate: { color: '#888', fontSize: '12px' },
     emptyText: { color: '#888', fontStyle: 'italic' },
+    editForm: { display: 'flex', flexDirection: 'column' },
+    editActions: { display: 'flex', gap: '10px', justifyContent: 'flex-end' },
+    cancelBtn: {
+        padding: '12px 25px',
+        backgroundColor: 'transparent',
+        color: '#ccc',
+        border: '1px solid #333',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+    },
     likeButton: {
         display: 'inline-flex',
         alignItems: 'center',
