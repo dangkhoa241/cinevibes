@@ -2,7 +2,13 @@
 
 [![CI](https://github.com/dangkhoa241/cinevibes/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/dangkhoa241/cinevibes/actions/workflows/ci.yml)
 
-CineVibes is a full-stack web application designed for movie enthusiasts to explore, discuss, and share opinions about movies in a structured and spoiler-aware environment.
+CineVibes started as a class project, but it's really about something I care about a lot: movies, and the very particular way I like to talk about them. I'm the person who wants a deep-dive on a plot twist the second the credits roll, but I also don't want that twist ruined for me in someone else's comment before I've even bought a ticket.
+
+The first version was barely more than a database — I crawled movie data from IMDb and bolted on a basic comment box, nothing more. When I showed it to my professor, he asked a question that stuck with me: what would actually make someone want to use this instead of just going to IMDb? I didn't have a good answer.
+
+He pushed me to think about it differently. Surface newly released movies so people walking straight out of the theater can find them and start discussing right away, instead of a static catalog nobody has a reason to revisit. Split comments into two real conversations, not one — a technical, critical breakdown for people who want to analyze the craft, and a reaction space for people who just want to share how a movie made them feel, since those are genuinely different kinds of discussion. And protect the people who haven't seen it yet: without spoiler protection, someone's twist ending gets ruined in the very first comment.
+
+I rebuilt CineVibes around those three ideas — category-based discussion threads with spoiler warnings, and a focus on trending, recently-released movies rather than a static archive. What changed for me afterward wasn't just that project; it's that I stopped asking "does this work" and started asking "why would someone actually come back" before building anything.
 
 Try it out here: [https://cinevibes-outt.onrender.com/](https://cinevibes-rho.vercel.app/)
 
