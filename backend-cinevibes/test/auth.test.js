@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
+import jwt from 'jsonwebtoken';
 import app from '../app.js';
 
 describe('POST /api/users (signup)', () => {
@@ -73,6 +74,26 @@ describe('POST /api/login', () => {
         const res = await request(app)
             .post('/api/login')
             .send({ username: 'nobody', password: 'secret123' });
+
+        expect(res.status).toBe(401);
+    });
+});
+
+describe('authMiddleware', () => {
+    it('returns 401 (not a 500) for an expired token', async () => {
+        const expiredToken = jwt.sign({ id: '000000000000000000000000', username: 'alice' }, process.env.SECRET, { expiresIn: -10 });
+
+        const res = await request(app)
+            .get('/api/notifications')
+            .set('Authorization', `Bearer ${expiredToken}`);
+
+        expect(res.status).toBe(401);
+    });
+
+    it('returns 401 (not a 500) for a garbage token', async () => {
+        const res = await request(app)
+            .get('/api/notifications')
+            .set('Authorization', 'Bearer not-a-real-token');
 
         expect(res.status).toBe(401);
     });

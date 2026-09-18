@@ -5,7 +5,13 @@ const authMiddleware = (request, response, next) => {
 
     if (authorization && authorization.startsWith('Bearer ')) {
         const token = authorization.replace('Bearer ', '');
-        const decodedToken = jwt.verify(token, process.env.SECRET);
+
+        let decodedToken;
+        try {
+            decodedToken = jwt.verify(token, process.env.SECRET);
+        } catch (err) {
+            return response.status(401).json({ error: 'token expired or invalid' });
+        }
 
         if (!decodedToken.id) {
             return response.status(401).json({ error: 'token invalid' });
