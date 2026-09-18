@@ -1,20 +1,41 @@
 const Comment = require("../models/comment");
+const Notification = require("../models/notification");
 
 exports.addComment = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const { content, category, isSpoiler } = req.body;
+        const { content, category, isSpoiler, parentComment } = req.body;
+
+        let resolvedCategory = category;
+        let parent = null;
+
+        if (parentComment) {
+            parent = await Comment.findById(parentComment);
+            if (!parent) return res.status(404).json({ error: 'Comment being replied to was not found' });
+            resolvedCategory = parent.category; // a reply always shares its parent's category
+        }
 
         const newComment = new Comment({
             movieId: id,
             content,
-            category,
+            category: resolvedCategory,
             isSpoiler: Boolean(isSpoiler),
+            parentComment: parentComment || null,
             user: req.user.id
         });
 
         const savedComment = await newComment.save();
+
+        if (parent && parent.user && parent.user.toString() !== req.user.id) {
+            await Notification.create({
+                user: parent.user,
+                fromUser: req.user.id,
+                comment: savedComment._id,
+                movieId: id
+            });
+        }
+
         const responseComment = savedComment.toObject();
         responseComment.user = { id: req.user.id, username: req.user.username };
 
@@ -81,6 +102,7 @@ exports.deleteComment = async (req, res) => {
             return res.status(403).json({ error: 'You can only delete your own comments' });
         }
 
+        await Comment.deleteMany({ parentComment: comment._id });
         await comment.deleteOne();
         res.status(204).end();
     } catch (err) {

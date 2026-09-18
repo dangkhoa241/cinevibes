@@ -5,6 +5,7 @@ const usersRouter = require('./controllers/user');
 const loginRouter = require('./controllers/login');
 const commentRouter = require('./routes/comment');
 const chatRouter = require('./routes/chat');
+const notificationRouter = require('./routes/notification');
 
 const app = express();
 
@@ -23,5 +24,7 @@ app.use("/api/movies", movieRoutes);
 app.use('/api/movies', commentRouter);
 
 app.use('/api/chat', chatRouter);
+
+app.use('/api/notifications', notificationRouter);
 
 module.exports = app;

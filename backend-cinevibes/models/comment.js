@@ -9,6 +9,11 @@ const commentSchema = new mongoose.Schema({
         default: 'normal'
     },
     isSpoiler: { type: Boolean, default: false },
+    parentComment: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Comment',
+        default: null
+    },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import api from '../api/client';
 
 const SearchIcon = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -8,10 +9,54 @@ const SearchIcon = () => (
     </svg>
 );
 
+const BellIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+);
+
+const formatRelativeTime = (dateString) => {
+    const diffMs = Date.now() - new Date(dateString).getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour < 24) return `${diffHour}h ago`;
+    return `${Math.floor(diffHour / 24)}d ago`;
+};
+
 const Header = ({ user, setUser }) => {
     const navigate = useNavigate();
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchValue, setSearchValue] = useState('');
+    const [notifications, setNotifications] = useState([]);
+    const [notifOpen, setNotifOpen] = useState(false);
+
+    const unreadCount = notifications.filter((n) => !n.read).length;
+
+    useEffect(() => {
+        // No cleanup needed on logout: the notification bell only renders
+        // while `user` is set, so stale state here is never shown.
+        if (!user) return;
+        api.get('/api/notifications', { headers: { Authorization: `Bearer ${user.token}` } })
+            .then(({ data }) => setNotifications(data))
+            .catch(() => setNotifications([]));
+    }, [user]);
+
+    const toggleNotifications = async () => {
+        const opening = !notifOpen;
+        setNotifOpen(opening);
+
+        if (opening && unreadCount > 0) {
+            try {
+                await api.post('/api/notifications/read', {}, { headers: { Authorization: `Bearer ${user.token}` } });
+                setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+            } catch (err) {
+                console.error('Failed to mark notifications read:', err);
+            }
+        }
+    };
 
     const handleLogout = () => {
         window.localStorage.removeItem('loggedCineVibesUser');
@@ -56,6 +101,38 @@ const Header = ({ user, setUser }) => {
                     >
                         <SearchIcon />
                     </button>
+                )}
+
+                {user && (
+                    <div style={styles.notifWrapper}>
+                        <button
+                            onClick={toggleNotifications}
+                            style={styles.iconButton}
+                            aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+                        >
+                            <BellIcon />
+                            {unreadCount > 0 && <span style={styles.notifBadge}>{unreadCount}</span>}
+                        </button>
+                        {notifOpen && (
+                            <div style={styles.notifDropdown}>
+                                {notifications.length > 0 ? (
+                                    notifications.map((n) => (
+                                        <Link
+                                            key={n._id}
+                                            to={`/movie/${n.movieId}`}
+                                            style={styles.notifItem}
+                                            onClick={() => setNotifOpen(false)}
+                                        >
+                                            <strong>{n.fromUser?.username || 'Someone'}</strong> replied to your comment
+                                            <div style={styles.notifTime}>{formatRelativeTime(n.createdAt)}</div>
+                                        </Link>
+                                    ))
+                                ) : (
+                                    <p style={styles.notifEmpty}>No notifications yet.</p>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 )}
 
                 {user ? (
@@ -111,6 +188,7 @@ const styles = {
         gap: '20px',
     },
     iconButton: {
+        position: 'relative',
         background: 'none',
         border: 'none',
         color: '#e5e5e5',
@@ -118,6 +196,58 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         padding: '6px',
+    },
+    notifWrapper: {
+        position: 'relative',
+    },
+    notifBadge: {
+        position: 'absolute',
+        top: '-2px',
+        right: '-2px',
+        backgroundColor: '#e50914',
+        color: '#fff',
+        fontSize: '10px',
+        fontWeight: 'bold',
+        borderRadius: '10px',
+        padding: '1px 5px',
+        minWidth: '16px',
+        textAlign: 'center',
+        lineHeight: '1.4',
+    },
+    notifDropdown: {
+        position: 'absolute',
+        top: 'calc(100% + 10px)',
+        right: 0,
+        width: '300px',
+        maxHeight: '360px',
+        overflowY: 'auto',
+        backgroundColor: '#141414',
+        border: '1px solid #262626',
+        borderRadius: '10px',
+        boxShadow: '0 12px 32px rgba(0,0,0,0.4)',
+        zIndex: 1000,
+    },
+    notifItem: {
+        display: 'block',
+        padding: '14px 16px',
+        borderBottom: '1px solid #262626',
+        color: '#e5e5e5',
+        textDecoration: 'none',
+        fontSize: '13px',
+        lineHeight: '1.4',
+    },
+    notifTime: {
+        marginTop: '4px',
+        color: '#888',
+        fontSize: '11px',
+    },
+    notifEmpty: {
+        padding: '20px',
+        margin: 0,
+        color: '#888',
+        fontSize: '13px',
+        fontStyle: 'italic',
+        textAlign: 'center',
     },
     searchForm: {
         display: 'flex',

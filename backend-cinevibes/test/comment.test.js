@@ -186,6 +186,122 @@ describe('DELETE /api/movies/:id/comments/:commentId', () => {
     });
 });
 
+describe('replying to a comment', () => {
+    it('saves a reply with a parentComment link, inheriting the parent\'s category', async () => {
+        const parent = await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'Original comment', category: 'technical' });
+
+        const reply = await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'A reply', category: 'normal', parentComment: parent.body._id });
+
+        expect(reply.status).toBe(201);
+        expect(reply.body.parentComment).toBe(parent.body._id);
+        expect(reply.body.category).toBe('technical');
+    });
+
+    it('404s when replying to a comment that does not exist', async () => {
+        const res = await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'A reply', category: 'normal', parentComment: '000000000000000000000000' });
+
+        expect(res.status).toBe(404);
+    });
+
+    it('notifies the parent comment\'s author when someone else replies', async () => {
+        const parent = await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'Original comment', category: 'normal' });
+
+        await request(app).post('/api/users').send({ username: 'replier', name: 'Replier', password: 'secret123' });
+        const replierLogin = await request(app).post('/api/login').send({ username: 'replier', password: 'secret123' });
+
+        await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${replierLogin.body.token}`)
+            .send({ content: 'A reply', category: 'normal', parentComment: parent.body._id });
+
+        const notifications = await request(app)
+            .get('/api/notifications')
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(notifications.body).toHaveLength(1);
+        expect(notifications.body[0].fromUser.username).toBe('replier');
+        expect(notifications.body[0].read).toBe(false);
+    });
+
+    it('does not notify yourself when replying to your own comment', async () => {
+        const parent = await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'Original comment', category: 'normal' });
+
+        await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'Replying to myself', category: 'normal', parentComment: parent.body._id });
+
+        const notifications = await request(app)
+            .get('/api/notifications')
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(notifications.body).toHaveLength(0);
+    });
+});
+
+describe('POST /api/notifications/read', () => {
+    it('marks all of the user\'s notifications as read', async () => {
+        const parent = await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'Original comment', category: 'normal' });
+
+        await request(app).post('/api/users').send({ username: 'replier2', name: 'Replier', password: 'secret123' });
+        const replierLogin = await request(app).post('/api/login').send({ username: 'replier2', password: 'secret123' });
+
+        await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${replierLogin.body.token}`)
+            .send({ content: 'A reply', category: 'normal', parentComment: parent.body._id });
+
+        await request(app)
+            .post('/api/notifications/read')
+            .set('Authorization', `Bearer ${token}`);
+
+        const notifications = await request(app)
+            .get('/api/notifications')
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(notifications.body[0].read).toBe(true);
+    });
+});
+
+describe('deleting a comment with replies', () => {
+    it('cascades the delete to its replies', async () => {
+        const parent = await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'Original comment', category: 'normal' });
+
+        await request(app)
+            .post('/api/movies/tt1/comments')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ content: 'A reply', category: 'normal', parentComment: parent.body._id });
+
+        await request(app)
+            .delete(`/api/movies/tt1/comments/${parent.body._id}`)
+            .set('Authorization', `Bearer ${token}`);
+
+        const remaining = await request(app).get('/api/movies/tt1/comments?category=normal');
+        expect(remaining.body).toHaveLength(0);
+    });
+});
+
 describe('GET /api/movies/:id/comments', () => {
     it('only returns comments for the requested category', async () => {
         await request(app)
