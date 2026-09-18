@@ -26,8 +26,13 @@ Try it out here: [https://cinevibes-outt.onrender.com/](https://cinevibes-rho.ve
 
 ### 💬 Comment System
 - Add comments under specific categories, with the author's username shown
+- Reply to comments in threaded discussions
 - Like other users' comments
 - Edit or delete your own comments
+
+### 🔔 Notifications
+- Get notified when someone replies to your comment
+- Unread count badge in the header; opening it marks notifications as read
 
 ### 🤖 CineBot (AI Chat Assistant)
 - Chat with an AI assistant for movie recommendations and discussion
