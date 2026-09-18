@@ -83,4 +83,28 @@ describe('MovieDetail replies', () => {
         );
         expect(await screen.findByText('I agree!')).toBeInTheDocument();
     });
+
+    it('hides replies to a spoiler comment until the spoiler is revealed', async () => {
+        const spoilerParent = {
+            _id: 'c1', content: 'He was dead the whole time!', category: 'normal', isSpoiler: true,
+            parentComment: null, likedBy: [], createdAt: new Date().toISOString(),
+            user: { id: 'u2', username: 'bob' },
+        };
+        const reply = {
+            _id: 'c2', content: 'Wow, so that final scene makes total sense now.', category: 'normal', isSpoiler: false,
+            parentComment: 'c1', likedBy: [], createdAt: new Date().toISOString(),
+            user: { id: 'u3', username: 'carol' },
+        };
+        api.get.mockImplementation(mockGetByUrl([spoilerParent, reply]));
+        const user = userEvent.setup();
+
+        renderMovieDetail(null);
+
+        expect(await screen.findByText(/1 reply hidden until the spoiler above is revealed/)).toBeInTheDocument();
+        expect(screen.queryByText(reply.content)).not.toBeInTheDocument();
+
+        await user.click(screen.getByText('⚠️ Spoiler — click to reveal'));
+
+        expect(await screen.findByText(reply.content)).toBeInTheDocument();
+    });
 });

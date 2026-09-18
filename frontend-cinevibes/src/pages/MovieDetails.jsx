@@ -410,16 +410,27 @@ const MovieDetail = ({ user }) => {
 
                 <div style={styles.commentList}>
                     {comments.length > 0 ? (
-                        comments.map((c) => (
-                            <div key={c._id}>
-                                {renderItem(c, false)}
-                                {c.replies?.length > 0 && (
-                                    <div style={styles.repliesList}>
-                                        {c.replies.map((reply) => renderItem(reply, true))}
-                                    </div>
-                                )}
-                            </div>
-                        ))
+                        comments.map((c) => {
+                            // A spoiler parent's replies can leak context about the very thing
+                            // it's hiding, so keep them hidden until the parent is revealed too.
+                            const parentIsHidden = c.isSpoiler && !revealedIds.has(c._id);
+                            return (
+                                <div key={c._id}>
+                                    {renderItem(c, false)}
+                                    {c.replies?.length > 0 && (
+                                        parentIsHidden ? (
+                                            <p style={styles.repliesHiddenNote}>
+                                                {c.replies.length} {c.replies.length === 1 ? 'reply' : 'replies'} hidden until the spoiler above is revealed
+                                            </p>
+                                        ) : (
+                                            <div style={styles.repliesList}>
+                                                {c.replies.map((reply) => renderItem(reply, true))}
+                                            </div>
+                                        )
+                                    )}
+                                </div>
+                            );
+                        })
                     ) : (
                         <p style={styles.emptyText}>No {activeTab === 'normal' ? 'general' : 'technical'} comments yet. Be the first!</p>
                     )}
@@ -553,6 +564,16 @@ const styles = {
         marginBottom: '15px',
         paddingLeft: '15px',
         borderLeft: '2px solid #262626',
+    },
+    repliesHiddenNote: {
+        marginLeft: '30px',
+        marginTop: '-5px',
+        marginBottom: '15px',
+        paddingLeft: '15px',
+        borderLeft: '2px solid #262626',
+        color: '#888',
+        fontSize: '13px',
+        fontStyle: 'italic',
     },
     commentHeader: {
         display: 'flex',
